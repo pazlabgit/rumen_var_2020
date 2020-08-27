@@ -1,10 +1,10 @@
 ## Introduction
 
 :computer: :bar_chart:
-Analysis to recreate the results in the manuscript **""** by Paz et al. 2020. 
+Bioinformatics analysis to recreate the results from the manuscript **""** by Paz et al. 2020. 
 
 ## Running details
-Analysis is presented as several R Markdown files that were ran on a Macintosh using the macOS High Sierra v10.13.6 operating system with 8 GB RAM. Other operating systems should work with successful cloning of the environment (see **Create environment**)
+Analysis is presented as several R Markdown files that were ran on a Macintosh using the macOS High Sierra v10.13.6 operating system with 8 GB RAM. Other operating systems should work with cloning of the environment (see **Create environment**)
 
 ## Steps
 
