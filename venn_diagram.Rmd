@@ -1,0 +1,97 @@
+---
+title: "Venn Diagram Breed"
+author: Henry Paz
+output: html_notebook
+---
+
+Generate venn diagram by breed.
+
+```{r, engine='bash'}
+#create directory venn
+mkdir venn
+
+#collapse samples by breed
+qiime feature-table group \
+  --i-table table_deblur_rarefied.qza \
+  --p-axis sample \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --m-metadata-column breed \
+  --p-mode sum \
+  --o-grouped-table venn/table_deblur_rarefied_groupbreed.qza
+  
+qiime tools export \
+  --input-path venn/table_deblur_rarefied_groupbreed.qza \
+  --output-path exported/table_deblur_rarefied_groupbreed
+
+biom convert -i exported/table_deblur_rarefied_groupbreed/feature-table.biom -o exported/table_deblur_rarefied_groupbreed/feature-table.txt --to-tsv
+```
+
+```{r}
+#load libraries
+library(tidyverse)
+library(gplots)
+library(VennDiagram)
+
+#collapse by breed data (summed sequences)
+breed_group <- read_tsv("exported/table_deblur_rarefied_groupbreed/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID") %>% 
+  select(-OTUID)
+
+#generate venn diagram values
+breed_df <- as.data.frame(as(breed_group, "matrix"))
+breed_boolean_df <- as.data.frame(breed_df > 0 + 0)
+breed_venn <- venn(breed_boolean_df)
+
+#venn diagram
+pdf("figures/FigureS4.pdf", height=8, width=8)
+grid.newpage()
+venn.plot <- draw.pairwise.venn(area1=4392,
+                                area2=4630,
+                                cross.area=3842,
+                                fill=c("Red", "Blue"),
+                                fontface=2, 
+                                cex=1.5, #within circle label size
+                                alpha=0.40, #transparency of circles
+                                lwd=2, #line width
+                                lty=6, #line patterh
+                                col=c("Red", "Blue"), #color of circle circumference
+                                category=c("Holstein", "Jersey"),
+                                cat.cex=2, #catergory label size
+                                cat.fontface=2,
+                                cat.col=c("Red","Blue"), #color of categories
+                                cat.pos = c(200,150), #categories position
+                                cat.dist = rep(0.03))
+dev.off()
+```
+
+Calculate the number of shared sequences.
+
+```{r}
+library(tidyverse)
+
+#breed data
+breed_group <- read_tsv("exported/table_deblur_rarefied_groupbreed/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID") %>% 
+  select(-OTUID)
+collapse <- as.matrix(as(breed_group, "matrix"))
+collapse_df <- as.data.frame(collapse)
+
+#calculate shared sequences
+seq_shared_func <- function(x) {
+  single_combo <- unlist(x)
+  collapse_sub <- collapse_df[, names(collapse_df) %in% single_combo]
+  collapse_sub[, 3] <- collapse_sub[, 1] + collapse_sub[, 2]
+  sub_sum <- colSums(collapse_sub)
+  collapse_sub[collapse_sub == 0] <- NA
+  collapse_sub2 <- na.omit(collapse_sub)
+  collapse_sub2[, 3] <- collapse_sub2[, 1] + collapse_sub2[, 2]
+  sub_sum2 <- colSums(collapse_sub2)
+  per <- (sub_sum2["V3"]/sub_sum["V3"]) * 100
+  collapse_out <- c(names(collapse_sub2)[1], names(collapse_sub2)[2], toString(sub_sum2["V3"]), 
+                    toString(sub_sum["V3"]), toString(per))
+  write(collapse_out, file = "breeds_sharedseqs.txt", sep = "\t", 
+        ncolumns = 5, append = TRUE)
+}
+
+combn(colnames(collapse), 2, simplify = FALSE, FUN = seq_shared_func)
+```

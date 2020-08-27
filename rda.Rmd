@@ -1,0 +1,308 @@
+---
+title: "Redundancy Analysis"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Redundancy analysis for Holstein and Jersey.
+
+```{r}
+library(tidyverse)
+library(psych)
+library(vegan)
+library(data.table)
+
+#create directory
+dir.create("rda")
+
+#create predictors holstein dataset  
+pred_all_holstein <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed:heptanoic_acid_percent) %>% 
+  rename(SampleID="#SampleID", pH=rumen_ph, NH3=nh3_mg_dl, 
+         VFA=vfa_total_mM,acetate=acetic_acid_percent, 
+         propionate=propionic_acid_percent,isobutyrate=isobutyric_acid_percent, 
+         butyrate=butyric_acid_percent,isovalerate=isovaleric_acid_percent, 
+         valerate=valeric_acid_percent,hexanoate=hexanoic_acid_percent,
+         heptanoate=heptanoic_acid_percent) %>% 
+  slice(2:153) %>% 
+  na.omit() %>% 
+  filter(breed=="Holstein") %>% 
+  select(-breed)
+
+#convert vector type
+str(pred_all_holstein)
+
+pred_all_holstein <- pred_all_holstein %>% 
+  mutate_at(vars(pH:heptanoate), as.numeric)
+
+str(pred_all_holstein) #check
+
+#visualize correlations among predictors (pearson coefficients)
+pdf("figures/FigureS10a.pdf", height = 6, width = 12)
+pred_all_holstein %>% 
+  select(pH:heptanoate) %>% 
+  pairs.panels(method="pearson", scale=T) #scale panels
+dev.off()
+
+#check data for variables removal
+pred_all_holstein %>% 
+  summarise_at(vars(pH:heptanoate), mean)
+
+#create predictors final dataset 
+pred_final_holstein <- pred_all_holstein %>% 
+  select(-c(isovalerate)) 
+
+#check after omission
+#pred_final %>% 
+#  select(pH:hexanoate) %>% 
+#  pairs.panels(method="pearson", scale=T)
+
+# checking gradient length with detrended correspondence analysis
+# gives the average standard deviation
+# a completely unimodal gradient has approximately 4 SD
+# linear analyses are presumably ok for SD up to 2-3
+pred_final_holstein %>% 
+  select(-c(SampleID, day, time)) %>% 
+  decorana()
+
+#create asv table for Holstein
+asv_holstein <- read_tsv("exported/asv_holstein/feature-table.txt", skip=1) %>% 
+  rename(OTUID="#OTU ID")
+
+#create taxonomy data
+taxonomy <- read_tsv("exported/gg_taxonomy/taxonomy.tsv") %>% 
+  select(-Confidence) %>% 
+  rename(OTUID="Feature ID", Taxonomy=Taxon) 
+
+#join asv_holstein and taxonomy datasets
+holstein_asvtaxa <- left_join(asv_holstein,taxonomy, by="OTUID") %>% 
+  select(OTUID, Taxonomy, everything()) # reorder columns
+
+#select genus data 
+holstein_asvgenus <- holstein_asvtaxa %>% 
+  separate(col=Taxonomy,
+           into=(c("kingdom", "phylum", "class", "order", "family", "genus", "species")),
+           fill="right",
+           sep=";") %>% 
+  select(-c(OTUID, kingdom, phylum, class, order, family, species)) 
+
+#format holstein_asvgenus
+holstein_asvgenus$genus <- gsub(" ", "", holstein_asvgenus$genus)
+holstein_asvgenus$genus <- gsub("g__", "", holstein_asvgenus$genus)
+holstein_asvgenus$genus <- gsub("^$", "Unclassified genus", holstein_asvgenus$genus)
+holstein_asvgenus$genus <- gsub("NA", "Unclassified genus", holstein_asvgenus$genus)  
+holstein_asvgenus$genus[is.na(holstein_asvgenus$genus)] <- "Unclassified genus"
+holstein_asvgenus$genus <- gsub("\\[", "", holstein_asvgenus$genus)
+holstein_asvgenus$genus <- gsub("\\]", "", holstein_asvgenus$genus)
+
+holstein_asvgenus_t <- as.data.frame(t(holstein_asvgenus))
+holstein_asvgenus_t <- as_tibble(rownames_to_column(holstein_asvgenus_t)) 
+write_tsv(holstein_asvgenus_t, "rda/holstein_asvgenus.txt", col_names=F)
+
+##create asv table final for Holstein 
+holstein_asvgenusfin <- read_tsv("rda/holstein_asvgenus.txt") %>% 
+  rename(SampleID=genus)
+
+#match order of pred_final SampleID
+holstein_asvgenusfin = holstein_asvgenusfin[match(pred_final_holstein$SampleID, holstein_asvgenusfin$SampleID), ]
+
+#confirm that pred_final and holstein_asvgenusfin data are in the same order
+identical(holstein_asvgenusfin[,1], pred_final_holstein[,1])
+
+#remove SampleID, day, and time from predictors table
+pred_rda_holstein <- pred_final_holstein %>% 
+  select(-c(SampleID, day, time))
+
+#remove SampleID from holstein asv table
+asv_rda_holstein <- holstein_asvgenusfin %>% 
+  select(-SampleID)
+
+#perform rda  
+rda_holstein <- rda(asv_rda_holstein ~ ., pred_rda_holstein)
+
+#evaluate rda
+summary(rda_holstein)
+anova(rda_holstein, permutations=how(nperm=999))
+RsquareAdj(rda_holstein)
+vif.cca(rda_holstein)
+
+#high VIF values (>10) indicate strong collinearity
+#proceed to reduction of the number of explanatory variables
+mod0 <- rda(asv_rda_holstein ~ 1, pred_rda_holstein)
+step_forward_rda <- 
+  ordistep(mod0,
+           scope=formula(rda_holstein),
+           direction="forward",
+           permutations=how(nperm=999))
+RsquareAdj(step_forward_rda)
+
+#perform forward rda result
+rda_holstein_forward <- rda(asv_rda_holstein ~ propionate + hexanoate + acetate + valerate + isobutyrate + pH, pred_rda_holstein)
+
+#evaluate rda
+summary(rda_holstein_forward)
+screeplot(rda_holstein_forward)
+coef(rda_holstein_forward) #equivalent of regression coefficient
+anova(rda_holstein_forward, permutations=how(nperm=999))
+RsquareAdj(rda_holstein_forward)
+vif.cca(rda_holstein_forward)
+
+#test for axes
+anova(rda_holstein_forward, by="axis", permutations=how(nperm=999))
+
+#generate figure
+pdf("figures/Figure5a.pdf", height=6, width=8)
+plot(rda_holstein_forward, 
+     scaling=2, 
+     display=c("sp", "cn"), 
+     type="points",#type=text
+     xlim=c(-25,25),
+     xlab="RDA1",
+     ylab="RDA2",
+     main="Holstein")
+dev.off()
+
+#to choose the elements that are plotted, use the argument display=c(), sp=species, wa= site scores in the species space (weighted average in CCA or weighted sums in RDA), lc= fitted site scores (linear combinations of explanatory variables) and cn= constraints (the explanatory variables)
+
+#create predictors jersey dataset  
+pred_all_jersey <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed:heptanoic_acid_percent) %>% 
+  rename(SampleID="#SampleID", pH=rumen_ph, NH3=nh3_mg_dl, 
+         VFA=vfa_total_mM,acetate=acetic_acid_percent, 
+         propionate=propionic_acid_percent,isobutyrate=isobutyric_acid_percent, 
+         butyrate=butyric_acid_percent,isovalerate=isovaleric_acid_percent, 
+         valerate=valeric_acid_percent,hexanoate=hexanoic_acid_percent,
+         heptanoate=heptanoic_acid_percent) %>% 
+  slice(2:153) %>% 
+  na.omit() %>% 
+  filter(breed=="Jersey") %>% 
+  select(-breed)
+
+#convert vector type
+str(pred_all_jersey)
+
+pred_all_jersey <- pred_all_jersey %>% 
+  mutate_at(vars(pH:heptanoate), as.numeric)
+
+str(pred_all_jersey) #check
+
+#visualize correlations among predictors (pearson coefficients)
+pdf("figures/FigureS10b.pdf", height = 6, width = 12)
+jersery_pred_cor <- pred_all_jersey %>% 
+  select(pH:heptanoate) %>% 
+  pairs.panels(method="pearson", scale=T) #scale panels
+dev.off()
+
+#check data for variables removal
+pred_all_jersey %>% 
+  summarise_at(vars(pH:heptanoate), mean)
+
+#create predictors final dataset 
+pred_final_jersey <- pred_all_jersey %>% 
+  select(-c(isovalerate)) 
+
+#check after omission
+#pred_final %>% 
+#  select(pH:hexanoate) %>% 
+#  pairs.panels(method="pearson", scale=T)
+
+# checking gradient length with detrended correspondence analysis
+# gives the average standard deviation
+# a completely unimodal gradient has approximately 4 SD
+# linear analyses are presumably ok for SD up to 2-3
+pred_final_jersey %>% 
+  select(-c(SampleID, day, time)) %>% 
+  decorana()
+
+#create asv table for jersey
+asv_jersey <- read_tsv("exported/asv_jersey/feature-table.txt", skip=1) %>% 
+  rename(OTUID="#OTU ID")
+
+#join asv_jersey and taxonomy datasets
+jersey_asvtaxa <- left_join(asv_jersey,taxonomy, by="OTUID") %>% 
+  select(OTUID, Taxonomy, everything()) # reorder columns
+
+#select genus data 
+jersey_asvgenus <- jersey_asvtaxa %>% 
+  separate(col=Taxonomy,
+           into=(c("kingdom", "phylum", "class", "order", "family", "genus", "species")),
+           fill="right",
+           sep=";") %>% 
+  select(-c(OTUID, kingdom, phylum, class, order, family, species)) 
+
+#format jersey_asvgenus
+jersey_asvgenus$genus <- gsub(" ", "", jersey_asvgenus$genus)
+jersey_asvgenus$genus <- gsub("g__", "", jersey_asvgenus$genus)
+jersey_asvgenus$genus <- gsub("^$", "Unclassified genus", jersey_asvgenus$genus)
+jersey_asvgenus$genus <- gsub("NA", "Unclassified genus", jersey_asvgenus$genus)  
+jersey_asvgenus$genus[is.na(jersey_asvgenus$genus)] <- "Unclassified genus"
+jersey_asvgenus$genus <- gsub("\\[", "", jersey_asvgenus$genus)
+jersey_asvgenus$genus <- gsub("\\]", "", jersey_asvgenus$genus)
+
+jersey_asvgenus_t <- as.data.frame(t(jersey_asvgenus))
+jersey_asvgenus_t <- as_tibble(rownames_to_column(jersey_asvgenus_t)) 
+write_tsv(jersey_asvgenus_t, "rda/jersey_asvgenus.txt", col_names=F)
+
+##create asv table final for jersey 
+jersey_asvgenusfin <- read_tsv("rda/jersey_asvgenus.txt") %>% 
+  rename(SampleID=genus)
+
+#match order of pred_final SampleID
+jersey_asvgenusfin = jersey_asvgenusfin[match(pred_final_jersey$SampleID, jersey_asvgenusfin$SampleID), ]
+
+#confirm that pred_final and jersey_asvgenusfin data are in the same order
+identical(jersey_asvgenusfin[,1], pred_final_jersey[,1])
+
+#remove SampleID, day, and time from predictors table
+pred_rda_jersey <- pred_final_jersey %>% 
+  select(-c(SampleID, day, time))
+
+#remove SampleID from jersey asv table
+asv_rda_jersey <- jersey_asvgenusfin %>% 
+  select(-SampleID)
+
+#perform rda  
+rda_jersey <- rda(asv_rda_jersey ~ ., pred_rda_jersey)
+
+#evaluate rda
+summary(rda_jersey)
+anova(rda_jersey, permutations=how(nperm=999))
+RsquareAdj(rda_jersey)
+vif.cca(rda_jersey)
+
+#high VIF values (>10) indicate strong collinearity
+#proceed to reduction of the number of explanatory variables
+mod0 <- rda(asv_rda_jersey ~ 1, pred_rda_jersey)
+step_forward_rda <- 
+  ordistep(mod0,
+           scope=formula(rda_jersey),
+           direction="forward",
+           permutations=how(nperm=999))
+RsquareAdj(step_forward_rda)
+
+#perform forward rda result
+rda_jersey_forward <- rda(asv_rda_jersey ~ NH3 + hexanoate + propionate + isobutyrate + VFA + valerate, pred_rda_jersey)
+
+#evaluate rda
+summary(rda_jersey_forward)
+screeplot(rda_jersey_forward)
+coef(rda_jersey_forward) #equivalent of regression coefficient
+anova(rda_jersey_forward, permutations=how(nperm=999))
+RsquareAdj(rda_jersey_forward)
+vif.cca(rda_jersey_forward)
+
+#test for axes
+anova(rda_jersey_forward, by="axis", permutations=how(nperm=999))
+
+#generate figure
+pdf("figures/Figure5b.pdf", height=6, width=6)
+plot_jersey <- plot(rda_jersey_forward, 
+                      scaling=2, 
+                      display=c("sp", "cn"), 
+                      type="points",#type=text
+                      xlim=c(-25,25),
+                      xlab="RDA1",
+                      ylab="RDA2",
+                      main="Jersey")
+dev.off()
+```

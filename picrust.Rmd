@@ -1,0 +1,393 @@
+---
+title: "PICRUSt"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+PICRUSt pipeline for Holstein.
+
+```{r, engine='bash'}
+#run picrust pipeline for holstein
+qiime picrust2 full-pipeline \
+--i-table asv_holstein.qza \
+--i-seq rep_seqs_deblur.qza \
+--output-dir picrust_holstein \
+--p-threads 4 \
+--p-hsp-method mp \
+--p-max-nsti 2 \
+
+#summarize pathway abundance prediction
+qiime feature-table summarize \
+--i-table picrust_holstein/pathway_abundance.qza \
+--o-visualization visualizations/holstein_pathway_abundance_summary.qzv
+#qiime tools view visualizations/holstein_pathway_abundance_summary.qzv
+
+#rarefy samples
+qiime feature-table rarefy \
+--i-table picrust_holstein/pathway_abundance.qza \
+--p-sampling-depth 747400 \
+--o-rarefied-table picrust_holstein/pathway_abundance_rare.qza
+
+qiime tools export \
+  --input-path picrust_holstein/pathway_abundance_rare.qza \
+  --output-path exported/holtein_pathway_abundance_rare
+  
+biom convert -i exported/holtein_pathway_abundance_rare/feature-table.biom -o exported/holstein_pathway_abundance_rare/feature-table.txt --to-tsv
+```
+
+Holstein pathways table in relative abundance.
+
+```{r}
+#generate holstein pathways table
+holstein_pathways <-  read_tsv("exported/holstein_pathway_abundance_rare/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID") 
+
+#transform to proportions
+holstein_pathways_df <- as.data.frame(holstein_pathways) 
+rownames(holstein_pathways_df) <- holstein_pathways_df[,1]
+holstein_pathways_df <- holstein_pathways_df[,-1]
+holstein_pathways_df_t <- t(holstein_pathways_df)
+holstein_pathways_prop <- holstein_pathways_df_t/rowSums(holstein_pathways_df_t)
+
+#format 
+holstein_pathways_relabun <- t(holstein_pathways_prop)
+holstein_pathways_relabun <- as.data.frame(holstein_pathways_relabun)
+holstein_pathways_relabun <- setDT(holstein_pathways_relabun, keep.rownames=T)[] #set rownames as 1st column
+names(holstein_pathways_relabun)[1] <- "#OTU ID" #rename first column
+
+#create file
+write.table(holstein_pathways_relabun, file="picrust_holstein/holstein_pathways_relabun.txt", sep="\t", col.names=T, row.names=F, quote=F)
+```
+
+PCoA Holstein.
+
+```{r, engine='bash'}
+#convert to biom
+biom convert -i picrust_holstein/holstein_pathways_relabun.txt -o picrust_holstein/holstein_pathways_relabun.biom --table-type="OTU table" --to-hdf5
+
+#import data
+qiime tools import \
+  --input-path picrust_holstein/holstein_pathways_relabun.biom \
+  --type 'FeatureTable[Frequency]' \
+  --input-format BIOMV210Format \
+  --output-path picrust_holstein/holstein_pathways_relabun.qza
+
+#calculate distance matrix
+qiime diversity beta \
+--i-table picrust_holstein/holstein_pathways_relabun.qza \
+--p-metric braycurtis \
+--o-distance-matrix picrust_holstein/holstein_distance_matrix_pathways.qza
+
+qiime tools export \
+  --input-path picrust_holstein/holstein_distance_matrix_pathways.qza \
+  --output-path exported/holstein_bc_distance_matrix
+
+#principal coordinate analysis
+qiime diversity pcoa \
+--i-distance-matrix picrust_holstein/holstein_distance_matrix_pathways.qza \
+--o-pcoa picrust_holstein/holstein_pathways_pcoa_results.qza
+
+qiime tools export \
+  --input-path picrust_holstein/holstein_pathways_pcoa_results.qza \
+  --output-path exported/holstein_pathways_pcoa_results
+
+#generate interactive ordination plot
+qiime emperor plot \
+--i-pcoa picrust_holstein/holstein_pathways_pcoa_results.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--o-visualization visualizations/holstein_pcoa_pathways.qzv
+#qiime tools view visualizations/holstein_pcoa_pathways.qzv
+
+#Compare distance matrix pathway across times
+qiime diversity beta-group-significance \
+--i-distance-matrix picrust_holstein/holstein_distance_matrix_pathways.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--m-metadata-column time \
+--p-method permanova \
+--p-permutations 999 \
+--p-pairwise \
+--o-visualization visualizations/holstein_time_pathways.qzv
+#qiime tools view visualizations/holstein_time_pathways.qzv
+
+#Compare distance matrix pathway across days
+qiime diversity beta-group-significance \
+--i-distance-matrix picrust_holstein/holstein_distance_matrix_pathways.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--m-metadata-column day \
+--p-method permanova \
+--p-permutations 999 \
+--p-pairwise \
+--o-visualization visualizations/holstein_day_pathways.qzv
+#qiime tools view visualizations/holstein_day_pathways.qzv
+```
+
+PICRUSt pipeline for Jersey.
+
+```{r, engine='bash'}
+#run picrust pipeline for jersey
+qiime picrust2 full-pipeline \
+--i-table asv_jersey.qza \
+--i-seq rep_seqs_deblur.qza \
+--output-dir picrust_jersey \
+--p-threads 4 \
+--p-hsp-method mp \
+--p-max-nsti 2 \
+
+#summarize pathway abundance prediction
+qiime feature-table summarize \
+--i-table picrust_jersey/pathway_abundance.qza \
+--o-visualization visualizations/jersey_pathway_abundance_summary.qzv
+#qiime tools view visualizations/jersey_pathway_abundance_summary.qzv
+
+#rarefy samples
+qiime feature-table rarefy \
+--i-table picrust_jersey/pathway_abundance.qza \
+--p-sampling-depth 764200 \
+--o-rarefied-table picrust_jersey/pathway_abundance_rare.qza
+
+qiime tools export \
+  --input-path picrust_jersey/pathway_abundance_rare.qza \
+  --output-path exported/jersey_pathway_abundance_rare
+  
+biom convert -i exported/jersey_pathway_abundance_rare/feature-table.biom -o exported/jersey_pathway_abundance_rare/feature-table.txt --to-tsv
+```
+
+Jersey pathways table in relative abundance.
+
+```{r}
+#generate jersey pathways table
+jersey_pathways <-  read_tsv("exported/jersey_pathway_abundance_rare/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID") 
+
+#transform to proportions
+jersey_pathways_df <- as.data.frame(jersey_pathways) 
+rownames(jersey_pathways_df) <- jersey_pathways_df[,1]
+jersey_pathways_df <- jersey_pathways_df[,-1]
+jersey_pathways_df_t <- t(jersey_pathways_df)
+jersey_pathways_prop <- jersey_pathways_df_t/rowSums(jersey_pathways_df_t)
+
+#format 
+jersey_pathways_relabun <- t(jersey_pathways_prop)
+jersey_pathways_relabun <- as.data.frame(jersey_pathways_relabun)
+jersey_pathways_relabun <- setDT(jersey_pathways_relabun, keep.rownames=T)[] #set rownames as 1st column
+names(jersey_pathways_relabun)[1] <- "#OTU ID" #rename first column
+
+#create file
+write.table(jersey_pathways_relabun, file="picrust_jersey/jersey_pathways_relabun.txt", sep="\t", col.names=T, row.names=F, quote=F)
+```
+
+PCoA Jersey.
+
+```{r, engine='bash'}
+#convert to biom
+biom convert -i picrust_jersey/jersey_pathways_relabun.txt -o picrust_jersey/jersey_pathways_relabun.biom --table-type="OTU table" --to-hdf5
+
+#import data
+qiime tools import \
+  --input-path picrust_jersey/jersey_pathways_relabun.biom \
+  --type 'FeatureTable[Frequency]' \
+  --input-format BIOMV210Format \
+  --output-path picrust_jersey/jersey_pathways_relabun.qza
+
+#calculate distance matrix
+qiime diversity beta \
+--i-table picrust_jersey/jersey_pathways_relabun.qza \
+--p-metric braycurtis \
+--o-distance-matrix picrust_jersey/jersey_distance_matrix_pathways.qza
+
+qiime tools export \
+  --input-path picrust_jersey/jersey_distance_matrix_pathways.qza \
+  --output-path exported/jersey_bc_distance_matrix
+
+#principal coordinate analysis
+qiime diversity pcoa \
+--i-distance-matrix picrust_jersey/jersey_distance_matrix_pathways.qza \
+--o-pcoa picrust_jersey/jersey_pathways_pcoa_results.qza
+
+qiime tools export \
+  --input-path picrust_jersey/jersey_pathways_pcoa_results.qza \
+  --output-path exported/jersey_pathways_pcoa_results
+
+#generate interactive ordination plot
+qiime emperor plot \
+--i-pcoa picrust_jersey/jersey_pathways_pcoa_results.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--o-visualization visualizations/jersey_pcoa_pathways.qzv
+#qiime tools view visualizations/jersey_pcoa_pathways.qzv
+
+#Compare distance matrix pathway across times
+qiime diversity beta-group-significance \
+--i-distance-matrix picrust_jersey/jersey_distance_matrix_pathways.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--m-metadata-column time \
+--p-method permanova \
+--p-permutations 999 \
+--p-pairwise \
+--o-visualization visualizations/jersey_time_pathways.qzv
+#qiime tools view visualizations/jersey_time_pathways.qzv
+
+#Compare distance matrix pathway across days
+qiime diversity beta-group-significance \
+--i-distance-matrix picrust_jersey/jersey_distance_matrix_pathways.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--m-metadata-column day \
+--p-method permanova \
+--p-permutations 999 \
+--p-pairwise \
+--o-visualization visualizations/jersey_day_pathways.qzv
+#qiime tools view visualizations/jersey_day_pathways.qzv
+```
+
+PCoA plots for Holstein and Jersey.
+
+```{r}
+#load libraries
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(vegan)
+
+#PERMANOVA and PCoA
+#create holstein dataset
+pcoa_path_holstein <- read_tsv("exported/holstein_pathways_pcoa_results/ordination.txt", col_names=c("SampleID", "PC1", "PC2"), skip=9) %>%
+  slice(1:75) # select rows 1 to 75
+
+#create time dataset
+ids_time_holstein <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, time) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Time=time) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Holstein") %>% 
+  na.omit() 
+
+#join pcoa_holstein and ids_time datasets
+pcoa_time_path_holstein <- left_join(pcoa_path_holstein, ids_time_holstein, by = "SampleID") %>% 
+  select(SampleID, Time, PC1, PC2) #reorder columns
+
+#PERMANOVA
+#bc distance matrix data
+bc_holstein <- read_tsv("exported/holstein_bc_distance_matrix/distance-matrix.tsv")
+bc_holstein <- as.data.frame(bc_holstein)
+
+#match sampleid order of matrix
+ids_time_holstein = ids_time_holstein[match(bc_holstein$X1, ids_time_holstein$SampleID), ]
+
+#generate matrix
+row.names(bc_holstein) <- bc_holstein$X1
+bc_holstein <- bc_holstein[, -1]
+bc_holstein <- as.dist(bc_holstein)
+
+#PERMANOVA
+adonis(bc_holstein  ~ Time, permutations=999, data=ids_time_holstein)
+
+#PCoA plot
+holstein_path_time_plot <- ggplot(pcoa_time_path_holstein, aes(x=PC1,y=PC2,shape=Time,color=Time)) + annotate(geom="text", x=-0.04, y=0.035, size=4, fontface="bold", color="#800000", label="PERMANOVA, P = 0.26") + geom_point(size=3) + ggtitle("Holstein") + labs(x="PC1 (70.5%)", y="PC2 (6.2%)",shape="Time",color="Time") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.title=element_text(color="black",size=10,face="bold"), legend.text=element_text(color="black",size=9,face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_shape_manual(name="Time (h)", values=c(20,18,15,8,17), limits=c("0","6","12","18","24"))
+
+#create day dataset
+ids_day_holstein <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, day) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Day=day) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Holstein") %>% 
+  na.omit() 
+
+#join pcoa_holstein and ids_day datasets
+pcoa_day_path_holstein <- left_join(pcoa_path_holstein, ids_day_holstein, by = "SampleID") %>% 
+  select(SampleID, Day, PC1, PC2) #reorder columns
+
+#PERMANOVA
+#weighted unifrac distance matrix data
+#bc distance matrix data
+bc_holstein <- read_tsv("exported/holstein_bc_distance_matrix/distance-matrix.tsv")
+bc_holstein <- as.data.frame(bc_holstein)
+
+#Match sampleid order of matrix
+ids_day_holstein = ids_day_holstein[match(bc_holstein$X1, ids_day_holstein$SampleID), ]
+
+#generate matrix
+row.names(bc_holstein) <- bc_holstein$X1
+bc_holstein <- bc_holstein[, -1]
+bc_holstein <- as.dist(bc_holstein)
+
+#PERMANOVA
+adonis(bc_holstein ~ Day, permutations=999, data=ids_day_holstein)
+
+#PCoA plot
+holstein_path_day_plot <- ggplot(pcoa_day_path_holstein, aes(x=PC1,y=PC2,shape=Day,color=Day)) + annotate(geom="text", x=-0.07, y=0.04, size=4, fontface="bold", color="#800000", label="PERMANOVA, P = 0.02") + geom_point(size=3) + ggtitle("Holstein")  + labs(x="PC1 (70.5%)", y="PC2 (6.2%)",shape="Day",color="Day") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.title=element_text(color="black",size=10,face="bold"), legend.text=element_text(color="black",size=9,face="bold")) + stat_ellipse(aes(fill=Day), alpha=0.2, type="t", level=0.95, size=0.5, geom="polygon", show.legend=F) + scale_shape_manual(name="Day", values=c(20,18,15)) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + scale_fill_manual(values=c("Black","Red","Blue"))
+
+#create jersey dataset
+pcoa_path_jersey <- read_tsv("exported/jersey_pathways_pcoa_results/ordination.txt", col_names=c("SampleID", "PC1", "PC2"), skip=9) %>%
+  slice(1:75) # select rows 1 to 75
+
+#create time dataset
+ids_time_jersey <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, time) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Time=time) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Jersey") %>% 
+  na.omit() 
+
+#join pcoa_jersey and ids_time datasets
+pcoa_time_path_jersey <- left_join(pcoa_path_jersey, ids_time_jersey, by = "SampleID") %>% 
+  select(SampleID, Time, PC1, PC2) #reorder columns
+
+#PERMANOVA
+#bc distance matrix data
+bc_jersey <- read_tsv("exported/jersey_bc_distance_matrix/distance-matrix.tsv")
+bc_jersey <- as.data.frame(bc_jersey)
+
+#match sampleid order of matrix
+ids_time_jersey = ids_time_jersey[match(bc_jersey$X1, ids_time_jersey$SampleID), ]
+
+#generate matrix
+row.names(bc_jersey) <- bc_jersey$X1
+bc_jersey <- bc_jersey[, -1]
+bc_jersey <- as.dist(bc_jersey)
+
+#PERMANOVA
+adonis(bc_jersey  ~ Time, permutations=999, data=ids_time_jersey)
+
+#PCoA plot
+jersey_path_time_plot <- ggplot(pcoa_time_path_jersey, aes(x=PC1,y=PC2,shape=Time,color=Time)) + annotate(geom="text", x=-0.04, y=0.04, size=4, fontface="bold", color="#800000", label="PERMANOVA, P = 0.38") + geom_point(size=3) + ggtitle("Jersey") + labs(x="PC1 (63.1%)", y="PC2 (8.9%)",shape="Time",color="Time") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.title=element_text(color="black",size=10,face="bold"), legend.text=element_text(color="black",size=9,face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_shape_manual(name="Time (h)", values=c(20,18,15,8,17), limits=c("0","6","12","18","24"))
+
+#create day dataset
+ids_day_jersey <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, day) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Day=day) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Jersey") %>% 
+  na.omit() 
+
+#join pcoa_jersey and ids_day datasets
+pcoa_day_path_jersey <- left_join(pcoa_path_jersey, ids_day_jersey, by = "SampleID") %>% 
+  select(SampleID, Day, PC1, PC2) #reorder columns
+
+#PERMANOVA
+#weighted unifrac distance matrix data
+#bc distance matrix data
+bc_jersey <- read_tsv("exported/jersey_bc_distance_matrix/distance-matrix.tsv")
+bc_jersey <- as.data.frame(bc_jersey)
+
+#Match sampleid order of matrix
+ids_day_jersey = ids_day_jersey[match(bc_jersey$X1, ids_day_jersey$SampleID), ]
+
+#generate matrix
+row.names(bc_jersey) <- bc_jersey$X1
+bc_jersey <- bc_jersey[, -1]
+bc_jersey <- as.dist(bc_jersey)
+
+#PERMANOVA
+adonis(bc_jersey ~ Day, permutations=999, data=ids_day_jersey)
+
+#PCoA plot
+jersey_path_day_plot <- ggplot(pcoa_day_path_jersey, aes(x=PC1,y=PC2,shape=Day,color=Day)) + annotate(geom="text", x=-0.04, y=0.04, size=4, fontface="bold", color="#800000", label="PERMANOVA, P = 0.02") + geom_point(size=3) + ggtitle("Jersey") + labs(x="PC1 (63.1%)", y="PC2 (8.9%)",shape="Day",color="Day") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.title=element_text(color="black",size=10,face="bold"), legend.text=element_text(color="black",size=9,face="bold")) + stat_ellipse(aes(fill=Day), alpha=0.2, type="t", level=0.95, size=0.5, geom="polygon", show.legend=F) + scale_shape_manual(name="Day", values=c(20,18,15)) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + scale_fill_manual(values=c("Black","Red","Blue"))
+
+#combine plots
+pcoa_plots <- ggarrange(holstein_path_time_plot,jersey_path_time_plot,
+                        holstein_path_day_plot, jersey_path_day_plot,
+                        labels = c("A","B", "C", "D"),
+                        ncol=2, nrow=2)
+
+#generate figure
+ggexport(pcoa_plots, filename="figures/FigureS12.pdf", height=8, width=12)
+```

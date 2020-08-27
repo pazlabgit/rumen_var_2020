@@ -1,0 +1,117 @@
+---
+title: "Rarefaction Curves"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Rarefy ASVs table and generate rarefaction curves.
+
+```{r, engine='bash'}
+#define even sampling depth
+qiime feature-table summarize \
+  --i-table table_deblur_filtered.qza \
+  --m-sample-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/table_deblur_filtered_summary.qzv
+#qiime tools view visualizations/table_deblur_filtered_summary.qzv
+
+#qiime tools export \
+#  --input-path visualizations/table_deblur_filtered_summary.qzv \
+#  --output-path exported/table_deblur_filtered_summary
+
+#rarefy samples
+qiime feature-table rarefy \
+  --i-table table_deblur_filtered.qza \
+  --p-sampling-depth 6813 \
+  --o-rarefied-table table_deblur_rarefied.qza
+  
+#qiime tools export \
+#  --input-path table_deblur_rarefied.qza \
+#  --output-path exported/table_deblur_rarefied
+  
+#biom convert -i exported/table_deblur_rarefied/feature-table.biom -o #exported/table_deblur_rarefied/feature-table.txt --to-tsv
+
+#rarefaction curves  
+qiime diversity alpha-rarefaction \
+  --i-table table_deblur_rarefied.qza \
+  --i-phylogeny rooted_tree.qza \
+  --p-min-depth 1 \
+  --p-max-depth 6813 \
+  --p-metrics observed_otus \
+  --p-metrics shannon \
+  --p-metrics goods_coverage \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --p-steps 10 \
+  --p-iterations 10 \
+  --o-visualization visualizations/alpha_rarefaction_plots.qzv 
+#qiime tools view visualizations/alpha_rarefaction_plots.qzv 
+
+qiime tools export \
+  --input-path visualizations/alpha_rarefaction_plots.qzv \
+  --output-path exported/alpha_rarefaction_plots
+```
+
+Generate rarefaction plot.
+
+```{r}
+#load libraries
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+
+#create rarefaction dataset
+rarefaction_asv <- read_csv("exported/alpha_rarefaction_plots/observed_otus.csv") 
+
+#reshaping from wide format to long format
+rare_asv_long <- rarefaction_asv %>% 
+  gather(depth, value, "depth-1_iter-1":"depth-6813_iter-10")
+
+#rename vector
+rare_asv_long$depth <- gsub("_.*","",rare_asv_long$depth)
+rare_asv_long$depth <- gsub("\\w*-","",rare_asv_long$depth)
+
+#convert vector type
+str(rare_asv_long)
+
+rare_asv_long <- rare_asv_long %>% 
+  mutate(day=as.character(day)) %>% 
+  mutate(time=as.character(time)) %>% 
+  mutate(depth=as.numeric(depth))
+
+#breed data
+breed_data <- rare_asv_long %>% 
+  group_by(breed, depth) %>% 
+  summarise(median=median(value),
+            q1=quantile(value,0.25),
+            q3=quantile(value,0.75))
+
+#breed graph
+breed_asv <- ggplot(breed_data, aes(x=depth, y=median, color=breed, shape=breed)) + geom_line(position=position_dodge(0.02)) + geom_point(size=4, position=position_dodge(0.02)) + labs(title="Breed",x="Sequencing Depth", y="Amplicon Sequence Variants", color="Breed", shape="Breed") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=12, face="bold"), legend.title=element_text(color="black", size=10, face="bold"), legend.text=element_text(color="black", size=9, face="bold")) + scale_colour_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16))
+
+#time data
+time_data <- rare_asv_long %>% 
+  group_by(time, depth) %>% 
+  summarise(median=median(value),
+            q1=quantile(value,0.25),
+            q3=quantile(value,0.75))
+
+#specify order of time levels
+time_data$time <- factor(time_data$time, levels = c("0","6","12","18","24"))
+
+#time graph
+time_asv <- ggplot(time_data, aes(x=depth, y=median, color=time, shape=time)) + geom_line(position=position_dodge(0.02)) + geom_point(size=4, position=position_dodge(0.02)) + labs(title="Time",x="Sequencing Depth", y="Amplicon Sequence Variants", color="Time", shape="Time") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=12, face="bold"), legend.title=element_text(color="black", size=10, face="bold"), legend.text=element_text(color="black", size=9, face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_shape_manual(name="Time (h)", values=c(20,18,15,8,17))
+
+#day data
+day_data <- rare_asv_long %>% 
+  group_by(day, depth) %>% 
+  summarise(median=median(value),
+            q1=quantile(value,0.25),
+            q3=quantile(value,0.75))
+
+#day graph
+day_asv <- ggplot(day_data, aes(x=depth, y=median, color=day, shape=day)) + geom_line(position=position_dodge(0.02)) + geom_point(size=4, position=position_dodge(0.02)) + labs(title="Day",x="Sequencing Depth", y="Amplicon Sequence Variants", color="Day", shape="Day") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=12, face="bold"), legend.title=element_text(color="black", size=10, face="bold"), legend.text=element_text(color="black", size=9, face="bold")) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + scale_shape_manual(name="Day", values=c(20,18,15))
+
+rarefactions <- ggarrange(breed_asv, time_asv, day_asv, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
+
+#generate figure
+ggexport(rarefactions, filename="figures/FigureS3.pdf", height=6, width=14)
+```

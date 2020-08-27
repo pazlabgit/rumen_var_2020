@@ -1,0 +1,425 @@
+---
+title: "Differentially Abundant ASVs"
+author: Henry Paz
+output: html_notebook
+---
+
+Generate lefse differentially abundant asv list for Holstein across times.
+
+```{r}
+library(tidyverse)
+
+#create directory
+dir.create("holstein_diff_asv")
+
+#create data set time 0 vs 6
+holstein_t0_6_lefse <- read_tsv("holstein_lefse_results/holstein_t0_6_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+  
+#adjust for multiple comparisons  
+holstein_t0_6_lefse$BH  <- p.adjust(holstein_t0_6_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t0_6_diff <- holstein_t0_6_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+  
+write_tsv(holstein_t0_6_diff, col_names=F, path="holstein_diff_asv/holstein_t0_6_diff.txt")
+
+#create data set time 0 vs 12
+holstein_t0_12_lefse <- read_tsv("holstein_lefse_results/holstein_t0_12_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t0_12_lefse$BH  <- p.adjust(holstein_t0_12_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t0_12_diff <- holstein_t0_12_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t0_12_diff, col_names=F, path="holstein_diff_asv/holstein_t0_12_diff.txt")
+
+#create data set time 0 vs 18
+holstein_t0_18_lefse <- read_tsv("holstein_lefse_results/holstein_t0_18_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t0_18_lefse$BH  <- p.adjust(holstein_t0_18_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t0_18_diff <- holstein_t0_18_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t0_18_diff, col_names=F, path="holstein_diff_asv/holstein_t0_18_diff.txt")
+
+#create data set time 0 vs 24
+holstein_t0_24_lefse <- read_tsv("holstein_lefse_results/holstein_t0_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t0_24_lefse$BH  <- p.adjust(holstein_t0_24_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t0_24_diff <- holstein_t0_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t0_24_diff, col_names=F, path="holstein_diff_asv/holstein_t0_24_diff.txt")
+
+#create data set time 6 vs 12
+holstein_t6_12_lefse <- read_tsv("holstein_lefse_results/holstein_t6_12_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t6_12_lefse$BH  <- p.adjust(holstein_t6_12_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t6_12_diff <- holstein_t6_12_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t6_12_diff, col_names=F, path="holstein_diff_asv/holstein_t6_12_diff.txt")
+
+#create data set time 6 vs 18
+holstein_t6_18_lefse <- read_tsv("holstein_lefse_results/holstein_t6_18_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t6_18_lefse$BH  <- p.adjust(holstein_t6_18_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t6_18_diff <- holstein_t6_18_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t6_18_diff, col_names=F, path="holstein_diff_asv/holstein_t6_18_diff.txt")
+
+#create data set time 6 vs 24
+holstein_t6_24_lefse <- read_tsv("holstein_lefse_results/holstein_t6_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t6_24_lefse$BH  <- p.adjust(holstein_t6_24_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t6_24_diff <- holstein_t6_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t6_24_diff, col_names=F, path="holstein_diff_asv/holstein_t6_24_diff.txt")
+
+#create data set time 12 vs 18
+holstein_t12_18_lefse <- read_tsv("holstein_lefse_results/holstein_t12_18_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t12_18_lefse$BH  <- p.adjust(holstein_t12_18_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t12_18_diff <- holstein_t12_18_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t12_18_diff, col_names=F, path="holstein_diff_asv/holstein_t12_18_diff.txt")
+
+#create data set time 12 vs 24
+holstein_t12_24_lefse <- read_tsv("holstein_lefse_results/holstein_t12_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t12_24_lefse$BH  <- p.adjust(holstein_t12_24_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t12_24_diff <- holstein_t12_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t12_24_diff, col_names=F, path="holstein_diff_asv/holstein_t12_24_diff.txt")
+
+#create data set time 18 vs 24
+holstein_t18_24_lefse <- read_tsv("holstein_lefse_results/holstein_t18_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_t18_24_lefse$BH  <- p.adjust(holstein_t18_24_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_t18_24_diff <- holstein_t18_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_t18_24_diff, col_names=F, path="holstein_diff_asv/holstein_t18_24_diff.txt")
+```
+
+Generate lefse differentially abundant asv list for Holstein across days.
+
+```{r}
+library(tidyverse)
+
+#create data set day 0 vs 14
+holstein_d0_14_lefse <- read_tsv("holstein_lefse_results/holstein_d0_14_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_d0_14_lefse$BH  <- p.adjust(holstein_d0_14_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_d0_14_diff <- holstein_d0_14_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_d0_14_diff, col_names=F, path="holstein_diff_asv/holstein_d0_14_diff.txt")
+
+#create data set day 0 vs 28
+holstein_d0_28_lefse <- read_tsv("holstein_lefse_results/holstein_d0_28_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_d0_28_lefse$BH  <- p.adjust(holstein_d0_28_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_d0_28_diff <- holstein_d0_28_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_d0_28_diff, col_names=F, path="holstein_diff_asv/holstein_d0_28_diff.txt")
+
+#create data set day 14 vs 28
+holstein_d14_28_lefse <- read_tsv("holstein_lefse_results/holstein_d14_28_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+holstein_d14_28_lefse$BH  <- p.adjust(holstein_d14_28_lefse$X5, method = "BH")
+
+#create differential features file
+holstein_d14_28_diff <- holstein_d14_28_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(holstein_d14_28_diff, col_names=F, path="holstein_diff_asv/holstein_d14_28_diff.txt")
+```
+
+Generate lefse differentially abundant asv list for Jersey across times.
+
+```{r}
+library(tidyverse)
+
+#create directory
+dir.create("jersey_diff_asv")
+
+#create data set time 0 vs 6
+jersey_t0_6_lefse <- read_tsv("jersey_lefse_results/jersey_t0_6_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+  
+#adjust for multiple comparisons  
+jersey_t0_6_lefse$BH  <- p.adjust(jersey_t0_6_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t0_6_diff <- jersey_t0_6_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+  
+write_tsv(jersey_t0_6_diff, col_names=F, path="jersey_diff_asv/jersey_t0_6_diff.txt")
+
+#create data set time 0 vs 12
+jersey_t0_12_lefse <- read_tsv("jersey_lefse_results/jersey_t0_12_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t0_12_lefse$BH  <- p.adjust(jersey_t0_12_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t0_12_diff <- jersey_t0_12_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t0_12_diff, col_names=F, path="jersey_diff_asv/jersey_t0_12_diff.txt")
+
+#create data set time 0 vs 18
+jersey_t0_18_lefse <- read_tsv("jersey_lefse_results/jersey_t0_18_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t0_18_lefse$BH  <- p.adjust(jersey_t0_18_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t0_18_diff <- jersey_t0_18_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t0_18_diff, col_names=F, path="jersey_diff_asv/jersey_t0_18_diff.txt")
+
+#create data set time 0 vs 24
+jersey_t0_24_lefse <- read_tsv("jersey_lefse_results/jersey_t0_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t0_24_lefse$BH  <- p.adjust(jersey_t0_24_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t0_24_diff <- jersey_t0_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t0_24_diff, col_names=F, path="jersey_diff_asv/jersey_t0_24_diff.txt")
+
+#create data set time 6 vs 12
+jersey_t6_12_lefse <- read_tsv("jersey_lefse_results/jersey_t6_12_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t6_12_lefse$BH  <- p.adjust(jersey_t6_12_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t6_12_diff <- jersey_t6_12_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t6_12_diff, col_names=F, path="jersey_diff_asv/jersey_t6_12_diff.txt")
+
+#create data set time 6 vs 18
+jersey_t6_18_lefse <- read_tsv("jersey_lefse_results/jersey_t6_18_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t6_18_lefse$BH  <- p.adjust(jersey_t6_18_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t6_18_diff <- jersey_t6_18_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t6_18_diff, col_names=F, path="jersey_diff_asv/jersey_t6_18_diff.txt")
+
+#create data set time 6 vs 24
+jersey_t6_24_lefse <- read_tsv("jersey_lefse_results/jersey_t6_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t6_24_lefse$BH  <- p.adjust(jersey_t6_24_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t6_24_diff <- jersey_t6_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t6_24_diff, col_names=F, path="jersey_diff_asv/jersey_t6_24_diff.txt")
+
+#create data set time 12 vs 18
+jersey_t12_18_lefse <- read_tsv("jersey_lefse_results/jersey_t12_18_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t12_18_lefse$BH  <- p.adjust(jersey_t12_18_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t12_18_diff <- jersey_t12_18_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t12_18_diff, col_names=F, path="jersey_diff_asv/jersey_t12_18_diff.txt")
+
+#create data set time 12 vs 24
+jersey_t12_24_lefse <- read_tsv("jersey_lefse_results/jersey_t12_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t12_24_lefse$BH  <- p.adjust(jersey_t12_24_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t12_24_diff <- jersey_t12_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t12_24_diff, col_names=F, path="jersey_diff_asv/jersey_t12_24_diff.txt")
+
+#create data set time 18 vs 24
+jersey_t18_24_lefse <- read_tsv("jersey_lefse_results/jersey_t18_24_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_t18_24_lefse$BH  <- p.adjust(jersey_t18_24_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_t18_24_diff <- jersey_t18_24_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_t18_24_diff, col_names=F, path="jersey_diff_asv/jersey_t18_24_diff.txt")
+```
+
+Generate lefse differentially abundant asv list for Jersey across days.
+
+```{r}
+library(tidyverse)
+
+#create data set day 0 vs 14
+jersey_d0_14_lefse <- read_tsv("jersey_lefse_results/jersey_d0_14_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_d0_14_lefse$BH  <- p.adjust(jersey_d0_14_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_d0_14_diff <- jersey_d0_14_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_d0_14_diff, col_names=F, path="jersey_diff_asv/jersey_d0_14_diff.txt")
+
+#create data set day 0 vs 28
+jersey_d0_28_lefse <- read_tsv("jersey_lefse_results/jersey_d0_28_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_d0_28_lefse$BH  <- p.adjust(jersey_d0_28_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_d0_28_diff <- jersey_d0_28_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_d0_28_diff, col_names=F, path="jersey_diff_asv/jersey_d0_28_diff.txt")
+
+#create data set day 14 vs 28
+jersey_d14_28_lefse <- read_tsv("jersey_lefse_results/jersey_d14_28_lefse_result.txt", col_names =F) %>% 
+  filter(complete.cases(.)) 
+
+#adjust for multiple comparisons  
+jersey_d14_28_lefse$BH  <- p.adjust(jersey_d14_28_lefse$X5, method = "BH")
+
+#create differential features file
+jersey_d14_28_diff <- jersey_d14_28_lefse %>% 
+  filter(BH <= 0.05) %>% 
+  select(X1)
+
+write_tsv(jersey_d14_28_diff, col_names=F, path="jersey_diff_asv/jersey_d14_28_diff.txt")
+```
+
+Combine dataset for time and day for Holstein and Jersey
+
+```{r, engine='bash'}
+#combine lists of differentially abundant asv for holstein
+echo -e "#SampleID" | cat - holstein_diff_asv/*_t*.txt | sort | uniq > holstein_diff_asv/holstein_time_asvdiff.txt
+
+echo -e "#SampleID" | cat - holstein_diff_asv/*_d*.txt | sort | uniq > holstein_diff_asv/holstein_day_asvdiff.txt
+
+#combine lists of differentially abundant asv for jersey
+echo -e "#SampleID" | cat - jersey_diff_asv/*_t*.txt | sort | uniq > jersey_diff_asv/jersey_time_asvdiff.txt
+
+echo -e "#SampleID" | cat - jersey_diff_asv/*_d*.txt | sort | uniq > jersey_diff_asv/jersey_day_asvdiff.txt
+
+#format files
+#remove f_ (lefse adds f_ to asvs starting with numbers)
+#holstein
+sed 's/f_//g' holstein_diff_asv/holstein_time_asvdiff.txt > holstein_diff_asv/holstein_time_asvdiffinal.txt
+
+sed 's/f_//g' holstein_diff_asv/holstein_day_asvdiff.txt > holstein_diff_asv/holstein_day_asvdiffinal.txt
+
+#jersey
+sed 's/f_//g' jersey_diff_asv/jersey_time_asvdiff.txt > jersey_diff_asv/jersey_time_asvdiffinal.txt
+
+sed 's/f_//g' jersey_diff_asv/jersey_day_asvdiff.txt > jersey_diff_asv/jersey_day_asvdiffinal.txt
+```

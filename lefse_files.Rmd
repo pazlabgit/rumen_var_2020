@@ -1,0 +1,441 @@
+---
+title: "Lefse Files"
+author: Henry Paz
+output: html_notebook
+---
+
+Generate lefse input files for Holstein.
+
+```{r}
+library(tidyverse)
+
+#create directory
+dir.create("holstein_lefse")
+
+#create Holstein dataset
+holstein_asv_table <-  read_tsv("exported/asv_holstein/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID")
+
+#Samples ID  
+holstein_sampleid <- colnames(holstein_asv_table) %>% 
+  as.data.frame() %>% 
+  rename(SampleID=".") %>% 
+  filter(SampleID!="OTUID")
+
+#create time dataset
+holstein_ids_time <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, time) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Time=time) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Holstein") %>% 
+  na.omit() 
+
+#join holstein_sampleid and holstein_ids_time dataset
+time_holstein <- left_join(holstein_sampleid, holstein_ids_time, by="SampleID") %>% 
+  select(Time, SampleID) #reorder columns
+
+#transpose
+time_holstein_t <- t(time_holstein)
+time_holstein_t <- as.data.frame(time_holstein_t, stringsAsFactors=F)
+
+#make second row header
+colnames(time_holstein_t) <- as.character(unlist(time_holstein_t[2,])) #rbind needs same headers
+
+#holstein asv table
+holstein_asv_table_df <- as.data.frame(holstein_asv_table, stringsAsFactors=F)
+rownames(holstein_asv_table_df) <- holstein_asv_table_df[,1]
+holstein_asv_table_df <- holstein_asv_table_df[,-1]
+
+#combine datasets
+holstein_time_lefse <- rbind(time_holstein_t, holstein_asv_table_df)
+
+#Create data sets for pairwise comparisons across times
+#0 vs 6
+holstein_time0_6 <- time_holstein %>% 
+  filter(Time==0 | Time==6) %>% 
+  select(SampleID)
+
+holstein_t0_6_list <- holstein_time0_6$SampleID
+holstein_t0_6_lefse <- holstein_time_lefse[,holstein_t0_6_list]  
+
+#create file
+write.table(holstein_t0_6_lefse, file="holstein_lefse/holstein_t0_6_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 12
+holstein_time0_12 <- time_holstein %>% 
+  filter(Time==0 | Time==12) %>% 
+  select(SampleID)
+
+holstein_t0_12_list <- holstein_time0_12$SampleID
+holstein_t0_12_lefse <- holstein_time_lefse[,holstein_t0_12_list]  
+
+#create file
+write.table(holstein_t0_12_lefse, file="holstein_lefse/holstein_t0_12_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 18
+holstein_time0_18 <- time_holstein %>% 
+  filter(Time==0 | Time==18) %>% 
+  select(SampleID)
+
+holstein_t0_18_list <- holstein_time0_18$SampleID
+holstein_t0_18_lefse <- holstein_time_lefse[,holstein_t0_18_list] 
+
+#create file
+write.table(holstein_t0_18_lefse, file="holstein_lefse/holstein_t0_18_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 24
+holstein_time0_24 <- time_holstein %>% 
+  filter(Time==0 | Time==24) %>% 
+  select(SampleID)
+
+holstein_t0_24_list <- holstein_time0_24$SampleID
+holstein_t0_24_lefse <- holstein_time_lefse[,holstein_t0_24_list] 
+
+#create file
+write.table(holstein_t0_24_lefse, file="holstein_lefse/holstein_t0_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#6 vs 12
+holstein_time6_12 <- time_holstein %>% 
+  filter(Time==6 | Time==12) %>% 
+  select(SampleID)
+
+holstein_t6_12_list <- holstein_time6_12$SampleID
+holstein_t6_12_lefse <- holstein_time_lefse[,holstein_t6_12_list] 
+
+#create file
+write.table(holstein_t6_12_lefse, file="holstein_lefse/holstein_t6_12_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#6 vs 18
+holstein_time6_18 <- time_holstein %>% 
+  filter(Time==6 | Time==18) %>% 
+  select(SampleID)
+
+holstein_t6_18_list <- holstein_time6_18$SampleID
+holstein_t6_18_lefse <- holstein_time_lefse[,holstein_t6_18_list] 
+
+#create file
+write.table(holstein_t6_18_lefse, file="holstein_lefse/holstein_t6_18_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#6 vs 24
+holstein_time6_24 <- time_holstein %>% 
+  filter(Time==6 | Time==24) %>% 
+  select(SampleID)
+
+holstein_t6_24_list <- holstein_time6_24$SampleID
+holstein_t6_24_lefse <- holstein_time_lefse[,holstein_t6_24_list] 
+
+#create file
+write.table(holstein_t6_24_lefse, file="holstein_lefse/holstein_t6_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#12 vs 18
+holstein_time12_18 <- time_holstein %>% 
+  filter(Time==12 | Time==18) %>% 
+  select(SampleID)
+
+holstein_t12_18_list <- holstein_time12_18$SampleID
+holstein_t12_18_lefse <- holstein_time_lefse[,holstein_t12_18_list] 
+
+#create file
+write.table(holstein_t12_18_lefse, file="holstein_lefse/holstein_t12_18_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#12 vs 24
+holstein_time12_24 <- time_holstein %>% 
+  filter(Time==12 | Time==24) %>% 
+  select(SampleID)
+
+holstein_t12_24_list <- holstein_time12_24$SampleID
+holstein_t12_24_lefse <- holstein_time_lefse[,holstein_t12_24_list] 
+
+#create file
+write.table(holstein_t12_24_lefse, file="holstein_lefse/holstein_t12_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#18 vs 24
+holstein_time18_24 <- time_holstein %>% 
+  filter(Time==18 | Time==24) %>% 
+  select(SampleID)
+
+holstein_t18_24_list <- holstein_time18_24$SampleID
+holstein_t18_24_lefse <- holstein_time_lefse[,holstein_t18_24_list] 
+
+#create file
+write.table(holstein_t18_24_lefse, file="holstein_lefse/holstein_t18_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#create day dataset
+holstein_ids_day <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, day) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Day=day) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Holstein") %>% 
+  na.omit() 
+
+#join holstein_sampleid and holstein_ids_day dataset
+day_holstein <- left_join(holstein_sampleid, holstein_ids_day, by="SampleID") %>% 
+  select(Day, SampleID) #reorder columns
+
+#transpose
+day_holstein_t <- t(day_holstein)
+day_holstein_t <- as.data.frame(day_holstein_t, stringsAsFactors=F)
+
+#make second row header
+colnames(day_holstein_t) <- as.character(unlist(day_holstein_t[2,])) #rbind needs same headers
+
+#holstein asv table
+holstein_asv_table_df <- as.data.frame(holstein_asv_table, stringsAsFactors=F)
+rownames(holstein_asv_table_df) <- holstein_asv_table_df[,1]
+holstein_asv_table_df <- holstein_asv_table_df[,-1]
+
+#combine datasets
+holstein_day_lefse <- rbind(day_holstein_t, holstein_asv_table_df)
+
+#Create data sets for pairwise comparisons across days
+#0 vs 14
+holstein_day0_14 <- day_holstein %>% 
+  filter(Day==0 | Day==14) %>% 
+  select(SampleID)
+
+holstein_d0_14_list <- holstein_day0_14$SampleID
+holstein_d0_14_lefse <- holstein_day_lefse[,holstein_d0_14_list]  
+
+#create file
+write.table(holstein_d0_14_lefse, file="holstein_lefse/holstein_d0_14_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 28
+holstein_day0_28 <- day_holstein %>% 
+  filter(Day==0 | Day==28) %>% 
+  select(SampleID)
+
+holstein_d0_28_list <- holstein_day0_28$SampleID
+holstein_d0_28_lefse <- holstein_day_lefse[,holstein_d0_28_list]  
+
+#create file
+write.table(holstein_d0_28_lefse, file="holstein_lefse/holstein_d0_28_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#14 vs 28
+holstein_day14_28 <- day_holstein %>% 
+  filter(Day==14 | Day==28) %>% 
+  select(SampleID)
+
+holstein_d14_28_list <- holstein_day14_28$SampleID
+holstein_d14_28_lefse <- holstein_day_lefse[,holstein_d14_28_list] 
+
+#create file
+write.table(holstein_d14_28_lefse, file="holstein_lefse/holstein_d14_28_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+```
+
+Generate lefse input files for Jersey.
+
+```{r}
+library(tidyverse)
+
+#create directory
+dir.create("jersey_lefse")
+
+#create jersey dataset
+jersey_asv_table <-  read_tsv("exported/asv_jersey/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID")
+
+#Samples ID  
+jersey_sampleid <- colnames(jersey_asv_table) %>% 
+  as.data.frame() %>% 
+  rename(SampleID=".") %>% 
+  filter(SampleID!="OTUID")
+
+#create time dataset
+jersey_ids_time <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, time) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Time=time) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Jersey") %>% 
+  na.omit() 
+
+#join jersey_sampleid and jersey_ids_time dataset
+time_jersey<- left_join(jersey_sampleid, jersey_ids_time, by="SampleID") %>% 
+  select(Time, SampleID) #reorder columns
+
+#transpose
+time_jersey_t <- t(time_jersey)
+time_jersey_t <- as.data.frame(time_jersey_t, stringsAsFactors=F)
+
+#make second row header
+colnames(time_jersey_t) <- as.character(unlist(time_jersey_t[2,])) #rbind needs same headers
+
+#jerseyasv table
+jersey_asv_table_df <- as.data.frame(jersey_asv_table, stringsAsFactors=F)
+rownames(jersey_asv_table_df) <- jersey_asv_table_df[,1]
+jersey_asv_table_df <- jersey_asv_table_df[,-1]
+
+#combine datasets
+jersey_time_lefse <- rbind(time_jersey_t, jersey_asv_table_df)
+
+#Create data sets for pairwise comparisons across times
+#0 vs 6
+jersey_time0_6 <- time_jersey%>% 
+  filter(Time==0 | Time==6) %>% 
+  select(SampleID)
+
+jersey_t0_6_list <- jersey_time0_6$SampleID
+jersey_t0_6_lefse <- jersey_time_lefse[,jersey_t0_6_list]  
+
+#create file
+write.table(jersey_t0_6_lefse, file="jersey_lefse/jersey_t0_6_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 12
+jersey_time0_12 <- time_jersey%>% 
+  filter(Time==0 | Time==12) %>% 
+  select(SampleID)
+
+jersey_t0_12_list <- jersey_time0_12$SampleID
+jersey_t0_12_lefse <- jersey_time_lefse[,jersey_t0_12_list]  
+
+#create file
+write.table(jersey_t0_12_lefse, file="jersey_lefse/jersey_t0_12_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 18
+jersey_time0_18 <- time_jersey%>% 
+  filter(Time==0 | Time==18) %>% 
+  select(SampleID)
+
+jersey_t0_18_list <- jersey_time0_18$SampleID
+jersey_t0_18_lefse <- jersey_time_lefse[,jersey_t0_18_list] 
+
+#create file
+write.table(jersey_t0_18_lefse, file="jersey_lefse/jersey_t0_18_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 24
+jersey_time0_24 <- time_jersey%>% 
+  filter(Time==0 | Time==24) %>% 
+  select(SampleID)
+
+jersey_t0_24_list <- jersey_time0_24$SampleID
+jersey_t0_24_lefse <- jersey_time_lefse[,jersey_t0_24_list] 
+
+#create file
+write.table(jersey_t0_24_lefse, file="jersey_lefse/jersey_t0_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#6 vs 12
+jersey_time6_12 <- time_jersey%>% 
+  filter(Time==6 | Time==12) %>% 
+  select(SampleID)
+
+jersey_t6_12_list <- jersey_time6_12$SampleID
+jersey_t6_12_lefse <- jersey_time_lefse[,jersey_t6_12_list] 
+
+#create file
+write.table(jersey_t6_12_lefse, file="jersey_lefse/jersey_t6_12_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#6 vs 18
+jersey_time6_18 <- time_jersey%>% 
+  filter(Time==6 | Time==18) %>% 
+  select(SampleID)
+
+jersey_t6_18_list <- jersey_time6_18$SampleID
+jersey_t6_18_lefse <- jersey_time_lefse[,jersey_t6_18_list] 
+
+#create file
+write.table(jersey_t6_18_lefse, file="jersey_lefse/jersey_t6_18_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#6 vs 24
+jersey_time6_24 <- time_jersey%>% 
+  filter(Time==6 | Time==24) %>% 
+  select(SampleID)
+
+jersey_t6_24_list <- jersey_time6_24$SampleID
+jersey_t6_24_lefse <- jersey_time_lefse[,jersey_t6_24_list] 
+
+#create file
+write.table(jersey_t6_24_lefse, file="jersey_lefse/jersey_t6_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#12 vs 18
+jersey_time12_18 <- time_jersey%>% 
+  filter(Time==12 | Time==18) %>% 
+  select(SampleID)
+
+jersey_t12_18_list <- jersey_time12_18$SampleID
+jersey_t12_18_lefse <- jersey_time_lefse[,jersey_t12_18_list] 
+
+#create file
+write.table(jersey_t12_18_lefse, file="jersey_lefse/jersey_t12_18_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#12 vs 24
+jersey_time12_24 <- time_jersey%>% 
+  filter(Time==12 | Time==24) %>% 
+  select(SampleID)
+
+jersey_t12_24_list <- jersey_time12_24$SampleID
+jersey_t12_24_lefse <- jersey_time_lefse[,jersey_t12_24_list] 
+
+#create file
+write.table(jersey_t12_24_lefse, file="jersey_lefse/jersey_t12_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#18 vs 24
+jersey_time18_24 <- time_jersey%>% 
+  filter(Time==18 | Time==24) %>% 
+  select(SampleID)
+
+jersey_t18_24_list <- jersey_time18_24$SampleID
+jersey_t18_24_lefse <- jersey_time_lefse[,jersey_t18_24_list] 
+
+#create file
+write.table(jersey_t18_24_lefse, file="jersey_lefse/jersey_t18_24_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#create day dataset
+jersey_ids_day <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed, day) %>% 
+  rename(SampleID="#SampleID", Breed=breed, Day=day) %>% 
+  slice(2:153) %>% 
+  filter(Breed=="Jersey") %>% 
+  na.omit() 
+
+#join jersey_sampleid and jersey_ids_day dataset
+day_jersey<- left_join(jersey_sampleid, jersey_ids_day, by="SampleID") %>% 
+  select(Day, SampleID) #reorder columns
+
+#transpose
+day_jersey_t <- t(day_jersey)
+day_jersey_t <- as.data.frame(day_jersey_t, stringsAsFactors=F)
+
+#make second row header
+colnames(day_jersey_t) <- as.character(unlist(day_jersey_t[2,])) #rbind needs same headers
+
+#jerseyasv table
+jersey_asv_table_df <- as.data.frame(jersey_asv_table, stringsAsFactors=F)
+rownames(jersey_asv_table_df) <- jersey_asv_table_df[,1]
+jersey_asv_table_df <- jersey_asv_table_df[,-1]
+
+#combine datasets
+jersey_day_lefse <- rbind(day_jersey_t, jersey_asv_table_df)
+
+#Create data sets for pairwise comparisons across days
+#0 vs 14
+jersey_day0_14 <- day_jersey%>% 
+  filter(Day==0 | Day==14) %>% 
+  select(SampleID)
+
+jersey_d0_14_list <- jersey_day0_14$SampleID
+jersey_d0_14_lefse <- jersey_day_lefse[,jersey_d0_14_list]  
+
+#create file
+write.table(jersey_d0_14_lefse, file="jersey_lefse/jersey_d0_14_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#0 vs 28
+jersey_day0_28 <- day_jersey%>% 
+  filter(Day==0 | Day==28) %>% 
+  select(SampleID)
+
+jersey_d0_28_list <- jersey_day0_28$SampleID
+jersey_d0_28_lefse <- jersey_day_lefse[,jersey_d0_28_list]  
+
+#create file
+write.table(jersey_d0_28_lefse, file="jersey_lefse/jersey_d0_28_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+
+#14 vs 28
+jersey_day14_28 <- day_jersey%>% 
+  filter(Day==14 | Day==28) %>% 
+  select(SampleID)
+
+jersey_d14_28_list <- jersey_day14_28$SampleID
+jersey_d14_28_lefse <- jersey_day_lefse[,jersey_d14_28_list] 
+
+#create file
+write.table(jersey_d14_28_lefse, file="jersey_lefse/jersey_d14_28_lefse.txt", sep="\t", col.names=F, row.names=T, quote=F)
+```

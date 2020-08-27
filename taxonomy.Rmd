@@ -1,0 +1,469 @@
+---
+title: "Taxonomy"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Make Holstein and Jersey subsets.
+
+```{r, engine='bash'}
+#import feature table
+qiime tools import \
+  --input-path asv_rare_taxonomy.biom \
+  --type 'FeatureTable[Frequency]' \
+  --input-format BIOMV210Format \
+  --output-path asv_rare_taxonomy.qza
+
+#holstein dataset
+qiime feature-table filter-samples \
+  --i-table asv_rare_taxonomy.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --p-where "breed='Holstein'" \
+  --o-filtered-table asv_holstein.qza
+  
+qiime tools export \
+  --input-path asv_holstein.qza \
+  --output-path exported/asv_holstein
+  
+biom convert -i exported/asv_holstein/feature-table.biom -o exported/asv_rare_qc/feature-table.txt --to-tsv
+
+#jersey dataset
+qiime feature-table filter-samples \
+  --i-table asv_rare_taxonomy.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --p-where "breed='Jersey'" \
+  --o-filtered-table asv_jersey.qza
+  
+qiime tools export \
+  --input-path asv_jersey.qza \
+  --output-path exported/asv_jersey
+  
+biom convert -i exported/asv_jersey/feature-table.biom -o exported/asv_jersey/feature-table.txt --to-tsv  
+```
+
+Generate taxonomy plots.
+
+```{r, engine='bash'}
+#taxonomy barplot holstein
+qiime taxa barplot \
+  --i-table asv_holstein.qza \
+  --i-taxonomy taxonomy/gg_taxonomy.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/holstein_taxa_barplots.qzv
+#qiime tools view visualizations/holstein_taxa_barplots.qzv
+
+qiime tools export \
+  --input-path visualizations/holstein_taxa_barplots.qzv \
+  --output-path exported/holstein_taxa_barplots
+
+#taxonomy barplot jersey
+qiime taxa barplot \
+  --i-table asv_jersey.qza \
+  --i-taxonomy taxonomy/gg_taxonomy.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/jersey_taxa_barplots.qzv
+#qiime tools view visualizations/jersey_taxa_barplots.qzv
+
+qiime tools export \
+  --input-path visualizations/jersey_taxa_barplots.qzv \
+  --output-path exported/jersey_taxa_barplots
+```
+
+Summaries of taxonomics ranks.
+
+```{r}
+#load libraries
+library("tidyverse")
+
+#create directory
+dir.create("tax_summary")
+
+#holstein taxonomic rank summaries
+#create dataset phyla
+phyla_hol <-  read_csv("exported/holstein_taxa_barplots/level-2.csv")
+
+phyla_hol <- phyla_hol %>% 
+  select("index":"k__Bacteria;p__WPS-2")
+
+#transform to proportions
+phyla_hol_df <- as.data.frame(phyla_hol)
+rownames(phyla_hol_df) <- phyla_hol_df[,1]
+phyla_hol_df <- phyla_hol_df[,-1]
+phyla_hol_prop <- phyla_hol_df/rowSums(phyla_hol_df)
+
+#summarize data
+summary_phyla_hol <- phyla_hol_prop %>% 
+  summarise_at(vars("k__Bacteria;__":"k__Bacteria;p__WPS-2"), mean) 
+
+#generate file
+write_tsv(summary_phyla_hol, path="tax_summary/summary_phyla_hol.txt")
+
+#create dataset class
+class_hol <-  read_csv("exported/holstein_taxa_barplots/level-3.csv")
+
+class_hol <- class_hol %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__")
+
+#transform to proportions
+class_hol_df <- as.data.frame(class_hol)
+rownames(class_hol_df) <- class_hol_df[,1]
+class_hol_df <- class_hol_df[,-1]
+class_hol_prop <- class_hol_df/rowSums(class_hol_df)
+
+#summarize data
+summary_class_hol <- class_hol_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__":"k__Bacteria;p__WPS-2;c__"), mean) 
+
+#generate file
+write_tsv(summary_class_hol, path="tax_summary/summary_class_hol.txt")
+
+#create dataset order
+order_hol <-  read_csv("exported/holstein_taxa_barplots/level-4.csv")
+
+order_hol <- order_hol %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__")
+
+#transform to proportions
+order_hol_df <- as.data.frame(order_hol)
+rownames(order_hol_df) <- order_hol_df[,1]
+order_hol_df <- order_hol_df[,-1]
+order_hol_prop <- order_hol_df/rowSums(order_hol_df)
+
+#summarize data
+summary_order_hol <- order_hol_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__":"k__Bacteria;p__WPS-2;c__;o__"), mean) 
+
+#generate file
+write_tsv(summary_order_hol, path="tax_summary/summary_order_hol.txt")
+
+#create dataset family
+family_hol <-  read_csv("exported/holstein_taxa_barplots/level-5.csv")
+
+family_hol <- family_hol %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__;f__")
+
+#transform to proportions
+family_hol_df <- as.data.frame(family_hol)
+rownames(family_hol_df) <- family_hol_df[,1]
+family_hol_df <- family_hol_df[,-1]
+family_hol_prop <- family_hol_df/rowSums(family_hol_df)
+
+#summarize data
+summary_family_hol <- family_hol_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__;__":"k__Bacteria;p__WPS-2;c__;o__;f__"), mean) 
+
+#generate file
+write_tsv(summary_family_hol, path="tax_summary/summary_family_hol.txt")
+
+#create dataset genus
+genus_hol <-  read_csv("exported/holstein_taxa_barplots/level-6.csv")
+
+genus_hol <- genus_hol %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__;f__;g__")
+
+#transform to proportions
+genus_hol_df <- as.data.frame(genus_hol)
+rownames(genus_hol_df) <- genus_hol_df[,1]
+genus_hol_df <- genus_hol_df[,-1]
+genus_hol_prop <- genus_hol_df/rowSums(genus_hol_df)
+
+#summarize data
+summary_genus_hol <- genus_hol_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__;__;__":"k__Bacteria;p__WPS-2;c__;o__;f__;g__"), mean) 
+
+#generate file
+write_tsv(summary_genus_hol, path="tax_summary/summary_genus_hol.txt")
+
+#create dataset
+species_hol <-  read_csv("exported/holstein_taxa_barplots/level-7.csv")
+
+species_hol <- species_hol %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__;f__;g__;s__")
+
+#transform to proportions
+species_hol_df <- as.data.frame(species_hol)
+rownames(species_hol_df) <- species_hol_df[,1]
+species_hol_df <- species_hol_df[,-1]
+species_hol_prop <- species_hol_df/rowSums(species_hol_df)
+
+#summarize data
+summary_species_hol <- species_hol_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__;__;__;__":"k__Bacteria;p__WPS-2;c__;o__;f__;g__;s__"), mean) 
+
+#generate file
+write_tsv(summary_species_hol, path="tax_summary/summary_species_hol.txt")
+#################################################################################################
+
+#jersey taxonomic rank summaries
+#create dataset phyla
+phyla_jer <-  read_csv("exported/jersey_taxa_barplots/level-2.csv")
+
+phyla_jer <- phyla_jer %>% 
+  select("index":"k__Bacteria;p__WPS-2")
+
+#transform to proportions
+phyla_jer_df <- as.data.frame(phyla_jer)
+rownames(phyla_jer_df) <- phyla_jer_df[,1]
+phyla_jer_df <- phyla_jer_df[,-1]
+phyla_jer_prop <- phyla_jer_df/rowSums(phyla_jer_df)
+
+#summarize data
+summary_phyla_jer <- phyla_jer_prop %>% 
+  summarise_at(vars("k__Bacteria;__":"k__Bacteria;p__WPS-2"), mean) 
+
+#generate file
+write_tsv(summary_phyla_jer, path="tax_summary/summary_phyla_jer.txt")
+
+#create dataset class
+class_jer <-  read_csv("exported/jersey_taxa_barplots/level-3.csv")
+
+class_jer <- class_jer %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__")
+
+#transform to proportions
+class_jer_df <- as.data.frame(class_jer)
+rownames(class_jer_df) <- class_jer_df[,1]
+class_jer_df <- class_jer_df[,-1]
+class_jer_prop <- class_jer_df/rowSums(class_jer_df)
+
+#summarize data
+summary_class_jer <- class_jer_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__":"k__Bacteria;p__WPS-2;c__"), mean) 
+
+#generate file
+write_tsv(summary_class_jer, path="tax_summary/summary_class_jer.txt")
+
+#create dataset order
+order_jer <-  read_csv("exported/jersey_taxa_barplots/level-4.csv")
+
+order_jer <- order_jer %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__")
+
+#transform to proportions
+order_jer_df <- as.data.frame(order_jer)
+rownames(order_jer_df) <- order_jer_df[,1]
+order_jer_df <- order_jer_df[,-1]
+order_jer_prop <- order_jer_df/rowSums(order_jer_df)
+
+#summarize data
+summary_order_jer <- order_jer_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__":"k__Bacteria;p__WPS-2;c__;o__"), mean) 
+
+#generate file
+write_tsv(summary_order_jer, path="tax_summary/summary_order_jer.txt")
+
+#create dataset family
+family_jer <- read_csv("exported/jersey_taxa_barplots/level-5.csv")
+
+family_jer <- family_jer %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__;f__")
+
+#transform to proportions
+family_jer_df <- as.data.frame(family_jer)
+rownames(family_jer_df) <- family_jer_df[,1]
+family_jer_df <- family_jer_df[,-1]
+family_jer_prop <- family_jer_df/rowSums(family_jer_df)
+
+#summarize data
+summary_family_jer <- family_jer_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__;__":"k__Bacteria;p__WPS-2;c__;o__;f__"), mean) 
+
+#generate file
+write_tsv(summary_family_jer, path="tax_summary/summary_family_jer.txt")
+
+#create dataset genus
+genus_jer <-  read_csv("exported/jersey_taxa_barplots/level-6.csv")
+
+genus_jer <- genus_jer %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__;f__;g__")
+
+#transform to proportions
+genus_jer_df <- as.data.frame(genus_jer)
+rownames(genus_jer_df) <- genus_jer_df[,1]
+genus_jer_df <- genus_jer_df[,-1]
+genus_jer_prop <- genus_jer_df/rowSums(genus_jer_df)
+
+#summarize data
+summary_genus_jer <- genus_jer_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__;__;__":"k__Bacteria;p__WPS-2;c__;o__;f__;g__"), mean) 
+
+#generate file
+write_tsv(summary_genus_jer, path="tax_summary/summary_genus_jer.txt")
+
+#create dataset
+species_jer <-  read_csv("exported/jersey_taxa_barplots/level-7.csv")
+
+species_jer <- species_jer %>% 
+  select("index":"k__Bacteria;p__WPS-2;c__;o__;f__;g__;s__")
+
+#transform to proportions
+species_jer_df <- as.data.frame(species_jer)
+rownames(species_jer_df) <- species_jer_df[,1]
+species_jer_df <- species_jer_df[,-1]
+species_jer_prop <- species_jer_df/rowSums(species_jer_df)
+
+#summarize data
+summary_species_jer <- species_jer_prop %>% 
+  summarise_at(vars("k__Bacteria;__;__;__;__;__;__":"k__Bacteria;p__WPS-2;c__;o__;f__;g__;s__"), mean) 
+
+#generate file
+write_tsv(summary_species_jer, path="tax_summary/summary_species_jer.txt")
+```
+
+Merge asv table and taxonomy data.
+
+```{r}
+library(tidyverse)
+
+#create taxonomy dataset
+taxonomy <- read_tsv("exported/gg_taxonomy/taxonomy.tsv", col_names = c("#OTU ID", "Taxonomy", "Confidence"), skip=1)
+
+#generate file
+write_tsv(taxonomy, "exported/gg_taxonomy/taxonomy_merge.tsv", col_names = T)
+```
+
+```{r, engine='bash'}
+#add taxonomy data to matching samples
+biom add-metadata -i exported/asv_rare_qc/feature-table.biom -o asv_rare_taxonomy.biom --observation-metadata-fp exported/gg_taxonomy/taxonomy_merge.tsv --sc-separated Taxonomy
+
+#convert from biom to tsv
+biom convert -i asv_rare_taxonomy.biom -o asv_rare_taxonomy.txt --to-tsv --header-key Taxonomy
+```
+
+Generate heat trees.
+
+```{r, eval=F}
+library(tidyverse)
+library(metacoder)
+
+#create dataset
+asv_table <- read_tsv("asv_rare_taxonomy.txt", skip=1) 
+
+#format asv_table
+colnames(asv_table)[1] <- "otu_id"
+asv_table$Taxonomy <- gsub("\\s", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub("\\[", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub("\\]", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";;;;;;", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";;;;;", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";;;;", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";;;", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";;", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub("Unassigned", "k__Bacteria", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";p__;c__;o__;f__", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";c__;o__;f__", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";g__;s__", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";f__$", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";s__$", "", asv_table$Taxonomy)
+asv_table$Taxonomy <- gsub(";o__$", "", asv_table$Taxonomy)
+
+#create IDs and breeds dataset
+sample_metadata <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed) %>% 
+  rename(SampleID="#SampleID", Breed=breed) %>% 
+  slice(2:153) %>% 
+  na.omit() 
+
+#parse the asv table
+obj <- parse_tax_data(asv_table,
+                      class_cols = "Taxonomy", # the column that contains taxonomic information
+                      class_sep = ";", # The character used to separate taxa in the classification
+                      class_regex = "^(.+)__(.+)$", # Regex identifying where the data for each taxon is
+                      class_key = c(tax_rank = "info", # A key describing each regex capture group
+                                    tax_name = "taxon_name"))
+
+#print(obj)
+
+#remove low abundance asv
+obj$data$tax_data <- zero_low_counts(obj, data="tax_data", min_count=5)
+
+#by setting low abundance counts to zero we might have created asv that no longer contain any observations. Check as follows.
+no_reads <- rowSums(obj$data$tax_data[, sample_metadata$SampleID]) == 0
+sum(no_reads)
+
+#filter zeroed asv
+obj <- filter_obs(obj, data="tax_data", 
+                  ! no_reads, drop_taxa=T)
+#print(obj)
+
+#get per-taxon information
+#sum abundance per-taxon and add the results to the taxmap object in a new table:
+obj$data$tax_abund <- calc_taxon_abund(obj, "tax_data", 
+                                       cols=sample_metadata$SampleID)
+
+#print(obj)
+
+#calculate the number of samples that have reads for each taxon:
+obj$data$tax_occ <- calc_n_samples(obj, "tax_abund", groups = sample_metadata$Breed)
+
+#print(obj)
+
+#heat tree of taxonomic data Holstein
+set.seed(1) # This makes the plot appear the same each time it is run 
+holstein_tree <- heat_tree(obj, 
+                           node_label = taxon_names,
+                           node_size = n_obs,
+                           node_color = Holstein, 
+                           node_size_axis_label = "ASVs count",
+                           node_color_axis_label = "Samples",
+                           layout = "davidson-harel", # The primary layout algorithm
+                           initial_layout = "reingold-tilford") # The layout algorithm that initializes node locations
+
+#heat tree of taxonomic data Jersey
+set.seed(1) # This makes the plot appear the same each time it is run 
+jersey_tree <- heat_tree(obj, 
+                         node_label = taxon_names,
+                         node_size = n_obs,
+                         node_color = Jersey, 
+                         node_size_axis_label = "ASVs count",
+                         node_color_axis_label = "Samples",
+                         layout = "davidson-harel", # The primary layout algorithm
+                         initial_layout = "reingold-tilford") # The layout algorithm that initializes node locations
+
+#combine plots
+breed_tree <- ggarrange(holstein_tree, jersey_tree,
+                        labels=c("A","B"), 
+                        nrow=2, ncol=1)
+
+#generate figure
+ggexport(breed_tree, filename="figures/FigureS5.pdf", height=10, width=8)
+
+#comparison between breeds
+#for each taxon, a Wilcoxon Rank Sum test was used to test for differences between the median abundances of samples
+obj$data$diff_table <- compare_groups(obj,
+                                      data = "tax_abund",
+                                      cols = sample_metadata$SampleID, # What columns of sample data to use
+                                      groups = sample_metadata$Breed) # What category each sample is assigned to
+
+#print(obj$data$diff_table)
+
+#based on abundance difference and  statistical significance
+#correct for multiple comparisons
+obj$data$diff_table$wilcox_p_value <- p.adjust(obj$data$diff_table$wilcox_p_value,
+                                               method = "BH")
+#distribution of p-values
+range(obj$data$diff_table$wilcox_p_value, finite=T) 
+
+obj$data$diff_table$log2_median_ratio[obj$data$diff_table$wilcox_p_value > 0.05] <- 0
+
+#heat tree difference taxonomic data between breeds
+set.seed(1)
+differential_tree <- heat_tree(obj, 
+                               node_label = taxon_names,
+                               node_size = n_obs, # n_obs is a function that calculates, in this case, the number of OTUs per taxon
+                               node_color = log2_median_ratio, # A column from `obj$data$diff_table`
+                               node_color_interval = c(-2, 2), # The range of `log2_median_ratio` to display
+                               node_color_range = c("blue", "gray", "red"), # The color palette used
+                               node_size_axis_label = "ASVs count",
+                               node_color_axis_label = "Log2 ratio of median",
+                               layout = "davidson-harel", # The primary layout algorithm
+                               initial_layout = "reingold-tilford") # The layout algorithm that initializes node locations
+
+pdf("figures/Figure3.pdf", height=6, width=6, onefile=F)
+differential_tree
+dev.off()
+
+jpeg("figures/Figure3.jpg", units="in", height=6, width=6, res=300)
+differential_tree
+dev.off()
+```

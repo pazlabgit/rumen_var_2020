@@ -1,0 +1,129 @@
+---
+title: "Rumen Parameters"
+aunthor: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Rumen pH, NH3, and VFA analyses.
+
+```{r}
+#load libraries
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+
+#create sas dataset
+sas <- read_tsv("metadata/sas_output.txt")
+
+#create pH dataset
+pH <- sas %>% 
+  filter(measure=="pH") %>% 
+  rename(Breed=breed) 
+
+#line graph pH
+pH_graph <- ggplot(pH, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=7, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="pH") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create NH3 dataset
+nh3 <- sas %>% 
+  filter(measure=="NH3") %>% 
+  rename(Breed=breed) 
+
+#NH3 graph pH
+nh3_graph <- ggplot(nh3, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=9, size=7, fontface="bold", color="#800000", label="P = 0.02") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Ammonia (mg/dL)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create VFA dataset
+vfa <- sas %>% 
+  filter(measure=="VFA") %>% 
+  rename(Breed=breed) 
+
+#VFA graph pH
+vfa_graph <- ggplot(vfa, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=95, size=7, fontface="bold", color="#800000", label="P = 0.12") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="VFA (mM)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create acetate dataset
+acetate <- sas %>% 
+  filter(measure=="Acetate") %>% 
+  rename(Breed=breed) 
+
+#acetate graph pH
+acetate_graph <- ggplot(acetate, aes(x=time, y=LSM, color=Breed, shape=Breed))  + annotate(geom="text", x=3, y=70, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1)+ geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Acetate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create propionate dataset
+propionate <- sas %>% 
+  filter(measure=="Propionate") %>% 
+  rename(Breed=breed) 
+
+#propionate graph pH
+propionate_graph <- ggplot(propionate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=22, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Propionate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create isobutyrate dataset
+isobutyrate <- sas %>% 
+  filter(measure=="Isobutyrate") %>% 
+  rename(Breed=breed) 
+
+#isobutyrate graph pH
+isobutyrate_graph <- ggplot(isobutyrate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=1, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Isobutyrate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create butyrate dataset
+butyrate <- sas %>% 
+  filter(measure=="Butyrate") %>% 
+  rename(Breed=breed) 
+
+#butyrate graph pH
+butyrate_graph <- ggplot(butyrate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=12.5, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Butyrate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create isovalerate dataset
+isovalerate <- sas %>% 
+  filter(measure=="Isovalerate") %>% 
+  rename(Breed=breed) 
+
+#isovalerate graph pH
+isovalerate_graph <- ggplot(isovalerate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=0.7, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Isovalerate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create valerate dataset
+valerate <- sas %>% 
+  filter(measure=="Valerate") %>% 
+  rename(Breed=breed) 
+
+#isovalerate graph pH
+valerate_graph <- ggplot(valerate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=1.2, size=7, fontface="bold", color="#800000", label="P = 0.24") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Valerate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create hexanoate dataset
+hexanoate <- sas %>% 
+  filter(measure=="Hexanoate") %>% 
+  rename(Breed=breed) 
+
+#hexanoate graph pH
+hexanoate_graph <- ggplot(hexanoate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=0.8, size=7, fontface="bold", color="#800000", label="P = 0.03") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Hexanoate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create heptanoate dataset
+heptanoate <- sas %>% 
+  filter(measure=="Heptanoate") %>% 
+  rename(Breed=breed) 
+
+#heptanoate graph pH
+heptanoate_graph <- ggplot(heptanoate, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=0.3, size=7, fontface="bold", color="#800000", label="P = 0.15") + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_line(size=1.5) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Heptanoate (mol/100 mol)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#create acetate/propionate ratio dataset
+AP <- sas %>% 
+  filter(measure=="Acetate/Propionate") %>% 
+  rename(Breed=breed) 
+
+#AP graph pH
+AP_graph <- ggplot(AP, aes(x=time, y=LSM, color=Breed, shape=Breed)) + annotate(geom="text", x=3, y=4.5, size=7, fontface="bold", color="#800000", label="P < 0.01") + geom_line(size=1.5) + geom_vline(xintercept=c(0,12), linetype="dashed", size=1) + geom_point(size=5) + geom_errorbar(aes(ymin=LSM-SEM, ymax=LSM+SEM), width=0.3, position=position_dodge(0.1)) + labs(x="Time (h)", y="Acetate/Propionate") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold")) + scale_color_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16)) + scale_x_continuous(breaks=seq(0, 24, 6)) 
+
+#combine boxplots
+boxplots_rumen <- ggarrange(pH_graph,nh3_graph, vfa_graph,acetate_graph,propionate_graph,
+                               isobutyrate_graph,butyrate_graph,isovalerate_graph,
+                               valerate_graph,hexanoate_graph,heptanoate_graph,
+                               AP_graph,
+                            labels = c("A","B","C","D","E","F","G","H","I","J","K","L"),
+                            font.label=list(size=20, face="bold"), 
+                            ncol = 3, nrow = 4)
+
+#generate figure
+ggexport(boxplots_rumen, filename="figures/figure1.pdf", height=16, width=20)
+
+jpeg("figures/Figure1.jpg", units="in", height=16, width=22, res=300)
+boxplots_rumen
+dev.off()
+```

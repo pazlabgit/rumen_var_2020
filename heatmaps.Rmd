@@ -1,0 +1,569 @@
+---
+title: "Heatmaps"
+author: Henry Paz (hap151@mstate.edu)
+output: html_notebook
+---
+
+Generate proportion asv tables for Holstein and Jersey.
+
+```{r}
+library(tidyverse)
+library(data.table)
+
+#generate holstein asv table
+holstein_asv_table <-  read_tsv("exported/asv_holstein/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID")
+
+#transform to proportions
+holstein_asv_table_df <- as.data.frame(holstein_asv_table) 
+rownames(holstein_asv_table_df) <- holstein_asv_table_df[,1]
+holstein_asv_table_df <- holstein_asv_table_df[,-1]
+holstein_asv_table_t <- t(holstein_asv_table_df)
+holstein_asv_prop <- holstein_asv_table_t/rowSums(holstein_asv_table_t)
+
+#q2 format
+holstein_asv_prop_q2 <- as.data.frame(t(holstein_asv_prop))
+holstein_asv_prop_q2 <- setDT(holstein_asv_prop_q2, keep.rownames=T)[] #set rownames as 1st column
+names(holstein_asv_prop_q2)[1] <- "#OTU ID" #rename first column
+
+#create file
+write_tsv(holstein_asv_prop_q2, col_names=T, path="holstein_asv_prop_q2.txt")
+
+#generate jersey asv table
+jersey_asv_table <-  read_tsv("exported/asv_jersey/feature-table.txt", skip=1) %>%
+  rename(OTUID="#OTU ID")
+
+#transform to proportions
+jersey_asv_table_df <- as.data.frame(jersey_asv_table) 
+rownames(jersey_asv_table_df) <- jersey_asv_table_df[,1]
+jersey_asv_table_df <- jersey_asv_table_df[,-1]
+jersey_asv_table_t <- t(jersey_asv_table_df)
+jersey_asv_prop <- jersey_asv_table_t/rowSums(jersey_asv_table_t)
+
+#q2 format
+jersey_asv_prop_q2 <- as.data.frame(t(jersey_asv_prop))
+jersey_asv_prop_q2 <- setDT(jersey_asv_prop_q2, keep.rownames=T)[] #set rownames as 1st column
+names(jersey_asv_prop_q2)[1] <- "#OTU ID" #rename first column
+
+#create file
+write_tsv(jersey_asv_prop_q2, col_names=T, path="jersey_asv_prop_q2.txt")
+```
+
+
+```{r, engine='bash'}
+#holstein proportion feature table
+biom convert -i holstein_asv_prop_q2.txt -o holstein_asv_prop.biom --to-hdf5 --table-type="OTU table"
+
+qiime tools import \
+  --input-path holstein_asv_prop.biom \
+  --type 'FeatureTable[Frequency]' \
+  --input-format BIOMV210Format \
+  --output-path holstein_asv_prop.qza
+
+#jersey proportion feature 
+biom convert -i jersey_asv_prop_q2.txt -o jersey_asv_prop.biom --to-hdf5 --table-type="OTU table"
+
+qiime tools import \
+  --input-path jersey_asv_prop.biom \
+  --type 'FeatureTable[Frequency]' \
+  --input-format BIOMV210Format \
+  --output-path jersey_asv_prop.qza
+```
+
+Proportion differentially abundant asv files for Holstein and Jersey.
+
+```{r, engine='bash'}
+#make directory
+mkdir diff_asv_tables
+
+#select differentially asv for holstein time
+qiime feature-table filter-features \
+  --i-table holstein_asv_prop.qza \
+  --m-metadata-file holstein_diff_asv/holstein_time_asvdiffinal.txt \
+  --p-no-exclude-ids \
+  --o-filtered-table asv_holstein_diff_proptime.qza
+  
+qiime tools export \
+  --input-path asv_holstein_diff_proptime.qza \
+  --output-path exported/asv_holstein_diff_proptime
+  
+biom convert -i exported/asv_holstein_diff_proptime/feature-table.biom -o diff_asv_tables/asv_holstein_diff_proptime.txt --to-tsv
+
+#select differentially asv for holstein day
+qiime feature-table filter-features \
+  --i-table holstein_asv_prop.qza \
+  --m-metadata-file holstein_diff_asv/holstein_day_asvdiffinal.txt \
+  --p-no-exclude-ids \
+  --o-filtered-table asv_holstein_diff_propday.qza
+
+qiime tools export \
+  --input-path asv_holstein_diff_propday.qza \
+  --output-path exported/asv_holstein_diff_propday
+  
+biom convert -i exported/asv_holstein_diff_propday/feature-table.biom -o diff_asv_tables/asv_holstein_diff_propday.txt --to-tsv
+  
+#select differentially asv for jersey time
+qiime feature-table filter-features \
+  --i-table jersey_asv_prop.qza \
+  --m-metadata-file jersey_diff_asv/jersey_time_asvdiffinal.txt \
+  --p-no-exclude-ids \
+  --o-filtered-table asv_jersey_diff_proptime.qza
+  
+qiime tools export \
+  --input-path asv_jersey_diff_proptime.qza \
+  --output-path exported/asv_jersey_diff_proptime
+
+biom convert -i exported/asv_jersey_diff_proptime/feature-table.biom -o diff_asv_tables/asv_jersey_diff_proptime.txt --to-tsv
+
+#select differentially asv for jersey day
+qiime feature-table filter-features \
+  --i-table jersey_asv_prop.qza \
+  --m-metadata-file jersey_diff_asv/jersey_day_asvdiffinal.txt \
+  --p-no-exclude-ids \
+  --o-filtered-table asv_jersey_diff_propday.qza
+  
+qiime tools export \
+  --input-path asv_jersey_diff_propday.qza \
+  --output-path exported/asv_jersey_diff_propday
+  
+biom convert -i exported/asv_jersey_diff_propday/feature-table.biom -o diff_asv_tables/asv_jersey_diff_propday.txt --to-tsv
+```
+
+Generate heatmaps for Holstein and Jersey.
+
+```{r}
+#load libraries
+library(tidyverse)
+library(Heatplus)
+library(vegan) #for vegdist
+library(gplots) #for heatmap.2
+
+#time datasets
+#create holstein proportion differentially abundant asv time dataset
+holstein_diff_time <- read_tsv("diff_asv_tables/asv_holstein_diff_proptime.txt", skip=1) %>% 
+  rename(OTUID="#OTU ID")
+
+#create taxonomy dataset
+tax_data <- read_tsv("exported/gg_taxonomy/taxonomy_merge.tsv") %>% 
+  select(-Confidence) %>% 
+  rename(OTUID="#OTU ID") 
+
+#format tax_data  
+tax_genus <- tax_data %>% 
+  separate(col=Taxonomy,
+           into=(c("kingdom", "phylum", "class", "order", "family", "genus", "species")),
+           fill="right",
+           sep=";") %>% 
+  select("OTUID", "genus")
+
+tax_genus$genus <- gsub(" ", "", tax_genus$genus)
+tax_genus$genus <- gsub("g__", "", tax_genus$genus)
+tax_genus$genus <- gsub("^$", "Unclassified genus", tax_genus$genus)
+tax_genus$genus <- gsub("NA", "Unclassified genus", tax_genus$genus)  
+tax_genus$genus[is.na(tax_genus$genus)] <- "Unclassified genus"
+tax_genus$genus <- gsub("\\[", "", tax_genus$genus)
+tax_genus$genus <- gsub("\\]", "", tax_genus$genus)
+
+#join holstein_diff_time and tax_genus dataset
+holstein_time_genus <- left_join(holstein_diff_time, tax_genus, by="OTUID") 
+
+#format
+holstein_prop <- holstein_time_genus %>% 
+  select(-OTUID) %>% 
+  select(genus, everything()) #reorder columns
+
+holstein_prop_t <- as.data.frame(t(holstein_prop), stringsAsFactors=F)
+colnames(holstein_prop_t) <- as.character(unlist(holstein_prop_t[1,])) #assign respective column names
+holstein_prop_t <- holstein_prop_t[-1,]
+col.nums <- c(1:139) # rows as numeric
+holstein_prop_t[col.nums] <- sapply(holstein_prop_t[col.nums],as.numeric)
+names(holstein_prop_t) <- make.unique(names(holstein_prop_t), sep=".")
+
+#heatmap
+#all differentially abundant asvs
+#color and dendograms
+scaleblackpink <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100)
+data.dist <- vegdist(holstein_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(holstein_prop_t), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#add time information 
+#generate metadata
+metadata <-  read_tsv("metadata/rumen_metadata.txt") %>%
+  select("#SampleID", breed, time) %>% 
+  rename(SampleID="#SampleID") %>% 
+  slice(2:153) %>% 
+  filter(breed=="Holstein") %>%
+  na.omit()
+
+#add color column
+metadata <- metadata %>% 
+  mutate(var=ifelse(time=="0", "Black",
+                    ifelse(time=="6", "Red",
+                           ifelse(time=="12", "Blue",
+                                  ifelse(time=="18", "Green", "Purple")))))
+
+#rownames need to match
+sample_list <- row.names(holstein_prop_t) 
+sample_list_df <- as.data.frame(sample_list)
+names(sample_list_df)[1] <- "SampleID" #rename first column                     
+                    
+#join sample_list_df and metadata datasets
+var_data <- left_join(sample_list_df, metadata, by="SampleID") %>% 
+  select(SampleID, var)
+
+#join holstein_prop_t and var_data_df
+var_data_df <- as.data.frame(var_data)
+rownames(var_data_df) <- var_data_df[,1]
+var_data_df <- var_data_df[,-1]
+cbind(row.names(holstein_prop_t), var_data_df)          
+  
+#generate heatmap 
+pdf("figures/FigureS8a.pdf", height=8, width=9)
+heatmap.2(as.matrix(holstein_prop_t), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), labCol="", xlab="Amplicon Sequence Variants", ylab="Samples", col=scaleblackpink, RowSideColors=var_data_df, trace="none", density.info="none", margins=c(2,5), lhei = c(2, 6))
+dev.off()
+
+#heatmap
+#most differentially abundant asvs
+#determine maximum proportions from each column
+maxab <- apply(holstein_prop_t, 2, max)
+head(maxab)
+
+#filter by abundance
+n1 <- names(which(maxab < 0.005))
+holstein_prop_abun <- holstein_prop_t[, -which(names(holstein_prop_t) %in% n1)]
+
+#color and dendograms
+scaleblackblue <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100) 
+data.dist <- vegdist(holstein_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(holstein_prop_abun), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#generate heatmap
+pdf("figures/FigureS8b.pdf", height=8, width=9)
+heatmap.2(as.matrix(holstein_prop_abun), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), xlab="Genus Rank", ylab="Samples", col=scaleblackblue, RowSideColors = var_data_df, trace="none", density.info="none", margins=c(12,5), lhei = c(2, 6))
+dev.off()
+#################################################################################################
+
+#create jersey proportion differentially abundant asv time dataset
+jersey_diff_time <- read_tsv("diff_asv_tables/asv_jersey_diff_proptime.txt", skip=1) %>% 
+  rename(OTUID="#OTU ID")
+
+#create taxonomy dataset
+tax_data <- read_tsv("exported/gg_taxonomy/taxonomy_merge.tsv") %>% 
+  select(-Confidence) %>% 
+  rename(OTUID="#OTU ID") 
+
+#format tax_data  
+tax_genus <- tax_data %>% 
+  separate(col=Taxonomy,
+           into=(c("kingdom", "phylum", "class", "order", "family", "genus", "species")),
+           fill="right",
+           sep=";") %>% 
+  select("OTUID", "genus")
+
+tax_genus$genus <- gsub(" ", "", tax_genus$genus)
+tax_genus$genus <- gsub("g__", "", tax_genus$genus)
+tax_genus$genus <- gsub("^$", "Unclassified genus", tax_genus$genus)
+tax_genus$genus <- gsub("NA", "Unclassified genus", tax_genus$genus)  
+tax_genus$genus[is.na(tax_genus$genus)] <- "Unclassified genus"
+tax_genus$genus <- gsub("\\[", "", tax_genus$genus)
+tax_genus$genus <- gsub("\\]", "", tax_genus$genus)
+
+#join jersey_diff_time and tax_genus dataset
+jersey_time_genus <- left_join(jersey_diff_time, tax_genus, by="OTUID") 
+
+#format
+jersey_prop <- jersey_time_genus %>% 
+  select(-OTUID) %>% 
+  select(genus, everything()) #reorder columns
+
+jersey_prop_t <- as.data.frame(t(jersey_prop), stringsAsFactors=F)
+colnames(jersey_prop_t) <- as.character(unlist(jersey_prop_t[1,])) #assign respective column names
+jersey_prop_t <- jersey_prop_t[-1,]
+col.nums <- c(1:117) # rows as numeric
+jersey_prop_t[col.nums] <- sapply(jersey_prop_t[col.nums],as.numeric)
+names(jersey_prop_t) <- make.unique(names(jersey_prop_t), sep=".")
+
+#heatmap
+#all differentially abundant asvs
+#color and dendograms
+scaleblackpink <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100)
+data.dist <- vegdist(jersey_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(jersey_prop_t), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#add time information 
+#generate metadata
+metadata <-  read_tsv("metadata/rumen_metadata.txt") %>%
+  select("#SampleID", breed, time) %>% 
+  rename(SampleID="#SampleID") %>% 
+  slice(2:153) %>% 
+  filter(breed=="Jersey") %>%
+  na.omit()
+
+#add color column
+metadata <- metadata %>% 
+  mutate(var=ifelse(time=="0", "Black",
+                    ifelse(time=="6", "Red",
+                           ifelse(time=="12", "Blue",
+                                  ifelse(time=="18", "Green", "Purple")))))
+
+#rownames need to match
+sample_list <- row.names(jersey_prop_t) 
+sample_list_df <- as.data.frame(sample_list)
+names(sample_list_df)[1] <- "SampleID" #rename first column                     
+
+#join sample_list_df and metadata datasets
+var_data <- left_join(sample_list_df, metadata, by="SampleID") %>% 
+  select(SampleID, var)
+
+#join jersey_prop_t and var_data_df
+var_data_df <- as.data.frame(var_data)
+rownames(var_data_df) <- var_data_df[,1]
+var_data_df <- var_data_df[,-1]
+cbind(row.names(jersey_prop_t), var_data_df)          
+
+#generate heatmap 
+pdf("figures/FigureS9a.pdf", height=8, width=9)
+heatmap.2(as.matrix(jersey_prop_t), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), labCol="", xlab="Amplicon Sequence Variants", ylab="Samples", col=scaleblackpink, RowSideColors=var_data_df, trace="none", density.info="none", margins=c(2,5), lhei = c(2, 6))
+dev.off()
+
+#heatmap
+#most differentially abundant asvs
+#determine maximum proportions from each column
+maxab <- apply(jersey_prop_t, 2, max)
+head(maxab)
+
+#filter by abundance
+n1 <- names(which(maxab < 0.005))
+jersey_prop_abun <- jersey_prop_t[, -which(names(jersey_prop_t) %in% n1)]
+
+#color and dendograms
+scaleblackblue <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100) 
+data.dist <- vegdist(jersey_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(jersey_prop_abun), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#generate heatmap
+pdf("figures/FigureS9b.pdf", height=8, width=9)
+heatmap.2(as.matrix(jersey_prop_abun), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), xlab="Genus Rank", ylab="Samples", col=scaleblackblue, RowSideColors = var_data_df, trace="none", density.info="none", margins=c(12,5), lhei = c(2, 6))
+dev.off()
+#################################################################################################
+
+#day datasets
+#create holstein proportion differentially abundant asv day dataset
+holstein_diff_day <- read_tsv("diff_asv_tables/asv_holstein_diff_propday.txt", skip=1) %>% 
+  rename(OTUID="#OTU ID")
+
+#create taxonomy dataset
+tax_data <- read_tsv("exported/gg_taxonomy/taxonomy_merge.tsv") %>% 
+  select(-Confidence) %>% 
+  rename(OTUID="#OTU ID") 
+
+#format tax_data  
+tax_genus <- tax_data %>% 
+  separate(col=Taxonomy,
+           into=(c("kingdom", "phylum", "class", "order", "family", "genus", "species")),
+           fill="right",
+           sep=";") %>% 
+  select("OTUID", "genus")
+
+tax_genus$genus <- gsub(" ", "", tax_genus$genus)
+tax_genus$genus <- gsub("g__", "", tax_genus$genus)
+tax_genus$genus <- gsub("^$", "Unclassified genus", tax_genus$genus)
+tax_genus$genus <- gsub("NA", "Unclassified genus", tax_genus$genus)  
+tax_genus$genus[is.na(tax_genus$genus)] <- "Unclassified genus"
+tax_genus$genus <- gsub("\\[", "", tax_genus$genus)
+tax_genus$genus <- gsub("\\]", "", tax_genus$genus)
+
+#join holstein_diff_day and tax_genus dataset
+holstein_day_genus <- left_join(holstein_diff_day, tax_genus, by="OTUID") 
+
+#format
+holstein_prop <- holstein_day_genus %>% 
+  select(-OTUID) %>% 
+  select(genus, everything()) #reorder columns
+
+holstein_prop_t <- as.data.frame(t(holstein_prop), stringsAsFactors=F)
+colnames(holstein_prop_t) <- as.character(unlist(holstein_prop_t[1,])) #assign respective column names
+holstein_prop_t <- holstein_prop_t[-1,]
+col.nums <- c(1:552) # rows as numeric
+holstein_prop_t[col.nums] <- sapply(holstein_prop_t[col.nums],as.numeric)
+names(holstein_prop_t) <- make.unique(names(holstein_prop_t), sep=".")
+
+#heatmap
+#all differentially abundant asvs
+#color and dendograms
+scaleblackpink <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100)
+data.dist <- vegdist(holstein_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(holstein_prop_t), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#add day information 
+#generate metadata
+metadata <-  read_tsv("metadata/rumen_metadata.txt") %>%
+  select("#SampleID", breed, day) %>% 
+  rename(SampleID="#SampleID") %>% 
+  slice(2:153) %>% 
+  filter(breed=="Holstein") %>%
+  na.omit()
+
+#add color column
+metadata <- metadata %>% 
+  mutate(var=ifelse(day=="0", "Black",
+                    ifelse(day=="14", "Red", "Blue")))
+                           
+#rownames need to match
+sample_list <- row.names(holstein_prop_t) 
+sample_list_df <- as.data.frame(sample_list)
+names(sample_list_df)[1] <- "SampleID" #rename first column                     
+
+#join sample_list_df and metadata datasets
+var_data <- left_join(sample_list_df, metadata, by="SampleID") %>% 
+  select(SampleID, var)
+
+#join holstein_prop_t and var_data_df
+var_data_df <- as.data.frame(var_data)
+rownames(var_data_df) <- var_data_df[,1]
+var_data_df <- var_data_df[,-1]
+cbind(row.names(holstein_prop_t), var_data_df)          
+
+#generate heatmap 
+pdf("figures/FigureS10a.pdf", height=8, width=9)
+heatmap.2(as.matrix(holstein_prop_t), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), labCol="", xlab="Amplicon Sequence Variants", ylab="Samples", col=scaleblackpink, RowSideColors=var_data_df, trace="none", density.info="none", margins=c(2,5), lhei = c(2, 6))
+dev.off()
+
+#heatmap
+#most differentially abundant asvs
+#determine maximum proportions from each column
+maxab <- apply(holstein_prop_t, 2, max)
+head(maxab)
+
+#filter by abundance
+n1 <- names(which(maxab < 0.01))
+holstein_prop_abun <- holstein_prop_t[, -which(names(holstein_prop_t) %in% n1)]
+
+#color and dendograms
+scaleblackblue <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100) 
+data.dist <- vegdist(holstein_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(holstein_prop_abun), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#generate heatmap
+pdf("figures/FigureS10b.pdf", height=8, width=9)
+heatmap.2(as.matrix(holstein_prop_abun), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), xlab="Genus Rank", ylab="Samples", col=scaleblackblue, RowSideColors = var_data_df, trace="none", density.info="none", margins=c(10,5), lhei = c(2, 6))
+dev.off()
+#################################################################################################
+
+#create jersey proportion differentially abundant asv day dataset
+jersey_diff_day <- read_tsv("diff_asv_tables/asv_jersey_diff_propday.txt", skip=1) %>% 
+  rename(OTUID="#OTU ID")
+
+#create taxonomy dataset
+tax_data <- read_tsv("exported/gg_taxonomy/taxonomy_merge.tsv") %>% 
+  select(-Confidence) %>% 
+  rename(OTUID="#OTU ID") 
+
+#format tax_data  
+tax_genus <- tax_data %>% 
+  separate(col=Taxonomy,
+           into=(c("kingdom", "phylum", "class", "order", "family", "genus", "species")),
+           fill="right",
+           sep=";") %>% 
+  select("OTUID", "genus")
+
+tax_genus$genus <- gsub(" ", "", tax_genus$genus)
+tax_genus$genus <- gsub("g__", "", tax_genus$genus)
+tax_genus$genus <- gsub("^$", "Unclassified genus", tax_genus$genus)
+tax_genus$genus <- gsub("NA", "Unclassified genus", tax_genus$genus)  
+tax_genus$genus[is.na(tax_genus$genus)] <- "Unclassified genus"
+tax_genus$genus <- gsub("\\[", "", tax_genus$genus)
+tax_genus$genus <- gsub("\\]", "", tax_genus$genus)
+
+#join jersey_diff_day and tax_genus dataset
+jersey_day_genus <- left_join(jersey_diff_day, tax_genus, by="OTUID") 
+
+#format
+jersey_prop <- jersey_day_genus %>% 
+  select(-OTUID) %>% 
+  select(genus, everything()) #reorder columns
+
+jersey_prop_t <- as.data.frame(t(jersey_prop), stringsAsFactors=F)
+colnames(jersey_prop_t) <- as.character(unlist(jersey_prop_t[1,])) #assign respective column names
+jersey_prop_t <- jersey_prop_t[-1,]
+col.nums <- c(1:429) # rows as numeric
+jersey_prop_t[col.nums] <- sapply(jersey_prop_t[col.nums],as.numeric)
+names(jersey_prop_t) <- make.unique(names(jersey_prop_t), sep=".")
+
+#heatmap
+#all differentially abundant asvs
+#color and dendograms
+scaleblackpink <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100)
+data.dist <- vegdist(jersey_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(jersey_prop_t), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#add day information 
+#generate metadata
+metadata <-  read_tsv("metadata/rumen_metadata.txt") %>%
+  select("#SampleID", breed, day) %>% 
+  rename(SampleID="#SampleID") %>% 
+  slice(2:153) %>% 
+  filter(breed=="Jersey") %>%
+  na.omit()
+
+#add color column
+metadata <- metadata %>% 
+  mutate(var=ifelse(day=="0", "Black",
+                    ifelse(day=="14", "Red", "Blue")))
+
+#rownames need to match
+sample_list <- row.names(jersey_prop_t) 
+sample_list_df <- as.data.frame(sample_list)
+names(sample_list_df)[1] <- "SampleID" #rename first column                     
+
+#join sample_list_df and metadata datasets
+var_data <- left_join(sample_list_df, metadata, by="SampleID") %>% 
+  select(SampleID, var)
+
+#join jersey_prop_t and var_data_df
+var_data_df <- as.data.frame(var_data)
+rownames(var_data_df) <- var_data_df[,1]
+var_data_df <- var_data_df[,-1]
+cbind(row.names(jersey_prop_t), var_data_df)          
+
+#generate heatmap 
+pdf("figures/FigureS11a.pdf", height=8, width=9)
+heatmap.2(as.matrix(jersey_prop_t), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), labCol="", xlab="Amplicon Sequence Variants", ylab="Samples", col=scaleblackpink, RowSideColors=var_data_df, trace="none", density.info="none", margins=c(2,5), lhei = c(2, 6))
+dev.off()
+
+#heatmap
+#most differentially abundant asvs
+#determine maximum proportions from each column
+maxab <- apply(jersey_prop_t, 2, max)
+head(maxab)
+
+#filter by abundance
+n1 <- names(which(maxab < 0.01))
+jersey_prop_abun <- jersey_prop_t[, -which(names(jersey_prop_t) %in% n1)]
+
+#color and dendograms
+scaleblackblue <- colorRampPalette(c("#202020", "pink"), space = "rgb")(100) 
+data.dist <- vegdist(jersey_prop_t, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+data.dist.g <- vegdist(t(jersey_prop_abun), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+
+#generate heatmap
+pdf("figures/FigureS11b.pdf", height=8, width=9)
+heatmap.2(as.matrix(jersey_prop_abun), Rowv=as.dendrogram(row.clus), Colv=as.dendrogram(col.clus), xlab="Genus Rank", ylab="Samples", col=scaleblackblue, RowSideColors = var_data_df, trace="none", density.info="none", margins=c(10,5), lhei = c(2, 6))
+dev.off()
+```

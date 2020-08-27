@@ -1,0 +1,59 @@
+---
+title: "Production Responses"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Production responses analyses.
+
+```{r}
+#load libraries
+library(tidyverse)
+library(ggpubr)
+library(car)
+
+#create dataset
+production <- read_tsv("metadata/production_data.txt")
+
+###summary dry matter intake
+production %>% group_by(Breed) %>%
+  summarise(n = n(),
+            mean=mean(DMI),
+            SD=sd(DMI),
+            se=SD/sqrt(n))
+
+#T-test DMI
+# Levene test Ho: Variances of breeds dry matter intake are equal
+leveneTest(production$DMI ~ production$Breed)
+t.test(production$DMI ~ production$Breed, var.eq=T)
+
+#DMI graph
+dmi_boxplot <- ggboxplot(production, x="Breed", y="DMI", color="Breed", add="jitter") + stat_compare_means(method="t.test", label.x=0.6, label.y=40) + labs(x="Breed", y="Dry Matter Intake (kg/d)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold"), legend.position="none") + scale_color_manual(values=c("Red","Blue"))
+
+###summary milk yield
+production %>% group_by(Breed) %>%
+  summarise(n = n(),
+            mean=mean(MY, na.rm=T),
+            SD=sd(MY, na.rm=T),
+            se=SD/sqrt(n))
+
+#T-test MY
+# Levene test Ho: Variances of breeds milk yield are equal
+leveneTest(production$MY ~ production$Breed)
+t.test(production$MY ~ production$Breed, var.eq = T)
+
+#MY graph
+my_boxplot <- ggboxplot(production, x="Breed", y="MY", color="Breed", add="jitter") + stat_compare_means(method="t.test", label.x=0.6, label.y=50) + labs(x="Breed", y="Milk Yield (kg/d)") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(color="black",size=14,face="bold"), legend.text=element_text(color="black",size=14,face="bold"), legend.position="none") + scale_color_manual(values=c("Red","Blue"))
+
+#combine boxplots
+boxplots_dmi_my <- ggarrange(dmi_boxplot,my_boxplot,
+                             labels = c("A","B"),
+                             font.label = list(size=16, color="black", face="bold"),
+                             ncol = 2, nrow = 1)
+
+#create directory figures
+dir.create("figures")
+
+#generate figure
+ggexport(boxplots_dmi_my, filename="figures/FigureS2.pdf", height=6, width=9)
+```

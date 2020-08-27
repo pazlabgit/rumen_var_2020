@@ -1,0 +1,49 @@
+---
+title: "Phylogenetic Tree"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Filter blank samples and singletons.
+
+```{r, engine='bash'}
+#create metadata file specifying samples to remove
+printf "#SampleID\nS55\nS151" > blank_samples.txt
+
+#remove blank samples
+qiime feature-table filter-samples \
+  --i-table table_deblur.qza \
+  --m-metadata-file blank_samples.txt \
+  --p-exclude-ids \
+  --o-filtered-table table_deblur_nb.qza
+
+#qiime tools export \
+#  --input-path table_deblur_nb.qza \
+#  --output-path exported/table_deblur_nb
+  
+#biom convert -i exported/table_deblur_nb/feature-table.biom -o exported/table_deblur_nb/feature-table.txt --to-tsv
+
+#Filter out singletons (should have been done already with qiime deblur denoise-16S --p-min-size 2)
+qiime feature-table filter-features \
+  --i-table table_deblur_nb.qza \
+  --p-min-samples 2 \
+  --o-filtered-table table_deblur_filtered.qza
+
+#qiime tools export \
+#  --input-path table_deblur_filtered.qza \
+#  --output-path exported/table_deblur_filtered
+  
+#biom convert -i exported/table_deblur_filtered/feature-table.biom -o exported/table_deblur_filtered/feature-table.txt --to-tsv
+```
+
+Generate a phylogenetic tree
+
+```{r, engine='bash'}
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep_seqs_deblur.qza \
+  --p-n-threads 0 \
+  --o-alignment aligned_rep_seqs.qza \
+  --o-masked-alignment masked_aligned_rep_seqs.qza \
+  --o-tree unrooted_tree.qza \
+  --o-rooted-tree rooted_tree.qza
+```

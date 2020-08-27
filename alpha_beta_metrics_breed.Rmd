@@ -1,0 +1,235 @@
+---
+title: "Alpha and Beta Metrics: Breed"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Alpha diversity metrics breed factor.
+
+```{r, engine='bash'}
+mkdir alpha_metrics_breed
+
+#Compute alpha diversity metrics
+qiime diversity alpha \
+  --i-table table_deblur_rarefied.qza \
+  --p-metric goods_coverage \
+  --o-alpha-diversity alpha_metrics_breed/goods_coverage_vector.qza 
+  
+qiime diversity alpha \
+  --i-table table_deblur_rarefied.qza \
+  --p-metric observed_otus \
+  --o-alpha-diversity alpha_metrics_breed/observed_otus_vector.qza
+  
+qiime diversity alpha \
+  --i-table table_deblur_rarefied.qza \
+  --p-metric shannon \
+  --o-alpha-diversity alpha_metrics_breed/shannon_vector.qza
+  
+#Compare alpha diversity metrics between breeds
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_breed/goods_coverage_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/goods_coverage_breed_significance.qzv
+#qiime tools view visualizations/goods_coverage_breed_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/goods_coverage_breed_significance.qzv \
+  --output-path exported/goods_coverage_breed_significance
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_breed/observed_otus_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/observed_otus_breed_significance.qzv
+#qiime tools view visualizations/observed_otus_breed_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/observed_otus_breed_significance.qzv \
+  --output-path exported/observed_otus_breed_significance
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_breed/shannon_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/shannon_breed_significance.qzv
+#qiime tools view visualizations/shannon_breed_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/shannon_breed_significance.qzv \
+  --output-path exported/shannon_breed_significance
+```
+
+Beta diversity breed factor.
+
+```{r, engine='bash'}
+#create directory beta_metrics
+mkdir beta_metrics_breed
+
+#calculate beta metrics
+qiime diversity beta-phylogenetic \
+  --i-table table_deblur_rarefied.qza \
+  --i-phylogeny rooted_tree.qza \
+  --p-metric weighted_unifrac \
+  --o-distance-matrix beta_metrics_breed/weighted_unifrac_distance_matrix.qza
+  
+qiime tools export \
+  --input-path beta_metrics_breed/weighted_unifrac_distance_matrix.qza \
+  --output-path exported/weighted_unifrac_distance_matrix
+  
+#principal coordinate analysis
+qiime diversity pcoa \
+  --i-distance-matrix beta_metrics_breed/weighted_unifrac_distance_matrix.qza \
+  --o-pcoa beta_metrics_breed/weighted_unifrac_pcoa_results.qza
+  
+qiime tools export \
+  --input-path beta_metrics_breed/weighted_unifrac_pcoa_results.qza \
+  --output-path exported/weighted_unifrac_pcoa_results
+
+#generate interactive ordination plot
+qiime emperor plot \
+--i-pcoa beta_metrics_breed/weighted_unifrac_pcoa_results.qza \
+--m-metadata-file metadata/rumen_metadata.txt \
+--o-visualization visualizations/weighted_unifrac_emperor.qzv
+#qiime tools view visualizations/weighted_unifrac_emperor.qzv
+
+#Compare beta diversity between breeds
+qiime diversity beta-group-significance \
+  --i-distance-matrix beta_metrics_breed/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --m-metadata-column breed \
+  --p-method permanova \
+  --p-permutations 999 \
+  --p-pairwise \
+  --o-visualization visualizations/weighted_unifrac_breed_significance.qzv 
+#qiime tools view visualizations/weighted_unifrac_breed_significance.qzv 
+```
+
+Generate alpha and beta metrics plot.
+
+```{r}
+#load libraries
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(vegan)
+
+#goods coverage data
+breed_goods_coverage <- read_tsv("exported/goods_coverage_breed_significance/metadata.tsv") %>% 
+  select(breed, goods_coverage) %>%
+  rename(Breed=breed) %>% 
+  slice(2:151) %>% # select rows 2 to 151
+  mutate(Breed=as.factor(Breed)) %>%
+  mutate(goods_coverage=as.numeric(goods_coverage)) 
+
+#summary statistic  
+options(pillar.sigfig=5)
+breed_goods_coverage %>%
+  group_by(Breed) %>% 
+  summarise(mean=mean(goods_coverage),
+            stdev=sd(goods_coverage),
+            maxvalue=max(goods_coverage),
+            minvalue=min(goods_coverage),
+            n = n(),
+            sem=stdev/sqrt(n))
+
+#kruskal–wallis test
+kruskal.test(goods_coverage ~ Breed, data=breed_goods_coverage)
+#Post-hoc test
+pairwise.wilcox.test(breed_goods_coverage$goods_coverage, breed_goods_coverage$Breed, p.adjust.method="BH")
+
+#asv data
+breed_asv <- read_tsv("exported/observed_otus_breed_significance/metadata.tsv") %>% 
+  select(breed, observed_otus) %>%
+  rename(Breed=breed) %>% 
+  slice(2:151) %>% # select rows 2 to 151
+  mutate(Breed=as.factor(Breed)) %>%
+  mutate(observed_otus=as.numeric(observed_otus)) 
+
+#summary statistic  
+breed_asv %>%
+  group_by(Breed) %>% 
+  summarise(mean=mean(observed_otus),
+            stdev=sd(observed_otus),
+            maxvalue=max(observed_otus),
+            minvalue=min(observed_otus),
+            n = n(),
+            sem=stdev/sqrt(n))
+
+#kruskal–wallis test
+kruskal.test(observed_otus ~ Breed, data=breed_asv)
+#Post-hoc test
+pairwise.wilcox.test(breed_asv$observed_otus, breed_asv$Breed, p.adjust.method="BH")
+
+#observed otus graph
+breed_asv_plot <- ggplot(breed_asv, aes(x=Breed, y=observed_otus, color=Breed)) + annotate(geom="text", x="Holstein", y=1200, size=3.5, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.15") + geom_boxplot(lwd=1) + labs(title="", x="Breed", y="Amplicon Sequence Variants") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.position="none") + scale_color_manual(values=c("Red","Blue")) + ylim(400,1200) 
+
+#shannon data
+breed_shannon <- read_tsv("exported/shannon_breed_significance/metadata.tsv") %>% 
+  select(breed, shannon) %>%
+  rename(Breed=breed) %>% 
+  slice(2:151) %>% # select rows 2 to 151
+  mutate(Breed=as.factor(Breed)) %>%
+  mutate(shannon=as.numeric(shannon)) 
+
+#summary statistic  
+breed_shannon %>%
+  group_by(Breed) %>% 
+  summarise(mean=mean(shannon),
+            stdev=sd(shannon),
+            maxvalue=max(shannon),
+            minvalue=min(shannon),
+            n = n(),
+            se=stdev/sqrt(n))
+
+#kruskal–wallis test
+kruskal.test(shannon ~ Breed, data=breed_shannon)
+#Post-hoc test
+pairwise.wilcox.test(breed_shannon$shannon, breed_shannon$Breed, p.adjust.method="BH")
+
+#shannon graph
+breed_shannon_plot <- ggplot(breed_shannon, aes(x=Breed, y=shannon, color=Breed)) + annotate(geom="text", x="Holstein", y=9, size=3.5, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.60") + geom_boxplot(lwd=1) + labs(title="", x="Breed", y="Shannon Index") + theme(plot.title=element_text(color="black", size=16, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.position="none") + scale_color_manual(values=c("Red","Blue")) + ylim(6,9) 
+
+#Principal Component Analysis
+#create breed dataset
+pcoa <- read_tsv("exported/weighted_unifrac_pcoa_results/ordination.txt", col_names = c("SampleID", "PC1", "PC2"), skip=9) %>%
+  slice(1:150) # select rows 1 to 150
+
+#create IDs and breeds dataset
+ids_breed <-  read_tsv("metadata/rumen_metadata.txt") %>% 
+  select("#SampleID", breed) %>% 
+  rename(SampleID="#SampleID", Breed=breed) %>% 
+  slice(2:153) %>% 
+  na.omit() 
+
+#join pcoa and ids_breed datasets
+pcoa_breed <- left_join(pcoa, ids_breed, by = "SampleID") %>% 
+  select(SampleID, Breed, PC1, PC2) #reorder columns
+
+#weighted unifrac distance matrix data
+weighted_unifrac <- read_tsv("exported/weighted_unifrac_distance_matrix/distance-matrix.tsv")
+weighted_unifrac <- as.data.frame(weighted_unifrac)
+
+#Match sampleid order of matrix
+ids_breed = ids_breed[match(weighted_unifrac$X1, ids_breed$SampleID), ]
+
+#generate matrix
+row.names(weighted_unifrac) <- weighted_unifrac$X1
+weighted_unifrac <- weighted_unifrac[, -1]
+weighted_unifrac <- as.dist(weighted_unifrac)
+
+#PERMANOVA
+adonis(weighted_unifrac ~ Breed, permutations=999, data=ids_breed)
+
+#PCoA plot
+breed_pcoa_plot <- ggplot(pcoa_breed, aes(x=PC1,y=PC2,shape=Breed,color=Breed)) + annotate(geom="text", x=-0.10, y=0.13, size=3.5, fontface="bold", color="#800000", label="PERMANOVA, P < 0.01") + geom_point(size=3) + labs(x="PC1 (30.9%)", y="PC2 (12.9%)",shape="Breed",color="Breed") + theme(axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=12, face="bold"), axis.title=element_text(color="black", size=14, face="bold"), legend.title=element_text(color="black",size=10,face="bold"), legend.text=element_text(color="black",size=9,face="bold")) + stat_ellipse(aes(fill=Breed), alpha=0.2, type="t", level=0.95, size=0.5, geom="polygon", show.legend=F) + scale_colour_manual(values=c("Red","Blue")) + scale_shape_manual(values=c(15,16))
+
+#combine plots
+alpha_beta_plot <- ggarrange(breed_asv_plot, breed_shannon_plot, breed_pcoa_plot, 
+                             labels=c("A","B","C"), 
+                             nrow=1, ncol=3)
+
+#generate figure
+ggexport(alpha_beta_plot, filename="figures/Figure2.pdf", height=6, width=14)
+
+jpeg("figures/Figure2.jpg", units="in", height=6, width=14, res=300)
+alpha_beta_plot
+dev.off()
+```

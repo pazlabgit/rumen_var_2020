@@ -1,0 +1,78 @@
+---
+title: "Sequence quality control and feature table construction"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Initial quality filtering process based on quality scores.
+
+```{r, engine='bash'}
+#initial quality filtering
+qiime quality-filter q-score \
+ --i-demux demux_paired_end.qza \
+ --p-min-quality 20 \
+ --p-quality-window 3 \
+ --p-min-length-fraction 0.75 \
+ --p-max-ambiguous 0 \
+ --o-filtered-sequences demux_filtered_paired_end.qza \
+ --o-filter-stats demux_filter_stats.qza
+
+#summary statistics quality filtering
+qiime metadata tabulate \
+  --m-input-file demux_filter_stats.qza \
+  --o-visualization visualizations/demux_filter_stats.qzv
+#qiime tools view visualizations/demux_filter_stats.qzv
+
+#export stats quality filtering
+#qiime tools export \
+#  --input-path visualizations/demux_filter_stats.qzv \
+#  --output-path exported/demux_filter_stats
+
+#deblur 
+qiime deblur denoise-16S \
+  --i-demultiplexed-seqs demux_filtered_paired_end.qza \
+  --p-trim-length 251 \
+  --p-mean-error 0.005 \
+  --p-indel-prob 0.01 \
+  --p-indel-max 3 \
+  --p-min-reads 10 \
+  --p-min-size 2 \
+  --p-sample-stats \
+  --o-table table_deblur.qza \
+  --o-representative-sequences rep_seqs_deblur.qza \
+  --o-stats deblur_stats.qza
+
+#export asv_table
+#qiime tools export \
+#  --input-path table_deblur.qza \
+#  --output-path exported/table_deblur
+
+#biom convert -i exported/table_deblur/feature-table.biom -o exported/table_deblur/feature-table.txt --to-tsv
+
+#summary statistics
+qiime deblur visualize-stats \
+  --i-deblur-stats deblur_stats.qza \
+  --o-visualization visualizations/deblur_stats.qzv
+#qiime tools view visualizations/deblur_stats.qzv
+
+#summary asv table
+qiime feature-table summarize \
+  --i-table table_deblur.qza \
+  --m-sample-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/table_deblur.qzv
+#qiime tools view visualizations/table_deblur.qzv
+
+#qiime tools export \
+#  --input-path visualizations/table_deblur.qzv \
+#  --output-path exported/table_deblur_summary
+
+#mapping of asv IDs to sequences (provide links to easily BLAST each sequence against the NCBI nt database)
+qiime feature-table tabulate-seqs \
+  --i-data rep_seqs_deblur.qza \
+  --o-visualization visualizations/rep_seqs_deblur.qzv
+#qiime tools view visualizations/rep_seqs_deblur.qzv
+
+#qiime tools export \
+#  --input-path visualizations/rep_seqs_deblur.qzv \
+#  --output-path exported/rep_seqs_deblur
+```

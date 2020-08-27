@@ -1,0 +1,280 @@
+---
+title: "Alpha Metrics Temporal"
+author: Henry Paz (hap151@msstate.edu)
+output: html_notebook
+---
+
+Alpha metrics for Holstein.
+
+```{r, engine='bash'}
+mkdir alpha_metrics_holstein
+
+#Compute alpha diversity metrics
+qiime diversity alpha \
+  --i-table asv_holstein.qza \
+  --p-metric observed_otus \
+  --o-alpha-diversity alpha_metrics_holstein/observed_otus_vector.qza
+  
+qiime diversity alpha \
+  --i-table asv_holstein.qza \
+  --p-metric shannon \
+  --o-alpha-diversity alpha_metrics_holstein/shannon_vector.qza
+  
+#Compare alpha diversity metrics
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_holstein/observed_otus_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/observed_otus_holstein_significance.qzv
+#qiime tools view visualizations/observed_otus_holstein_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/observed_otus_holstein_significance.qzv \
+  --output-path exported/observed_otus_holstein_significance
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_holstein/shannon_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/shannon_holstein_significance.qzv
+#qiime tools view visualizations/shannon_holstein_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/shannon_holstein_significance.qzv \
+  --output-path exported/shannon_holstein_significance
+```
+
+Generate alpha boxplots for Holstein.
+
+```{r}
+library(tidyverse)
+library("ggpubr")
+
+#create observed_otus dataset
+observed_otus_holstein <-  read_tsv("exported/observed_otus_holstein_significance/metadata.tsv") %>% 
+  select(day, time, observed_otus) %>% 
+  rename(Day=day, Time=time) %>% 
+  slice(2:76) %>% 
+  mutate(Day=as.factor(Day)) %>% 
+  mutate(Time=as.factor(Time)) %>% 
+  mutate(observed_otus=as.numeric(observed_otus))
+
+#summary statistic  
+options(pillar.sigfig=5)
+observed_otus_holstein %>%
+  group_by(Time) %>% 
+  summarise(mean=mean(observed_otus),
+            stdev=sd(observed_otus),
+            maxvalue=max(observed_otus),
+            minvalue=min(observed_otus))
+
+observed_otus_holstein %>%
+  group_by(Day) %>% 
+  summarise(mean=mean(observed_otus),
+            stdev=sd(observed_otus),
+            maxvalue=max(observed_otus),
+            minvalue=min(observed_otus))
+
+#kruskal–wallis test
+kruskal.test(observed_otus ~ Time, data=observed_otus_holstein)
+#Post-hoc test
+pairwise.wilcox.test(observed_otus_holstein$observed_otus, observed_otus_holstein$Time, p.adjust.method="BH")
+
+#kruskal–wallis test
+kruskal.test(observed_otus ~ Day, data=observed_otus_holstein)
+#Post-hoc test
+pairwise.wilcox.test(observed_otus_holstein$observed_otus, observed_otus_holstein$Day, p.adjust.method="BH")
+
+#time boxplot
+boxplot_time_holstein_otus <- ggplot(observed_otus_holstein, aes(x=Time, y=observed_otus, color=Time)) + annotate(geom="text", x="6", y=1200, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.96") + geom_boxplot(lwd=1) + labs(title="", x="Time", y="Amplicon Sequence Variants") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_x_discrete(limits=c("0","6","12","18","24")) + ylim(400,1200)
+
+#day boxplot
+my_comparisons <- list( c("0", "28"), c("14", "28"))
+
+boxplot_day_holstein_otus <- ggplot(observed_otus_holstein, aes(x=Day, y=observed_otus, color=Day)) + annotate(geom="text", x="14", y=1400, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.004") + geom_boxplot(lwd=1) + labs(title="", x="Day", y="Amplicon Sequence Variants") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + ylim(400,1400) + stat_compare_means(comparisons = my_comparisons, label="p.signif", label.y = c(1200, 1300))
+
+#create shannon index dataset
+shannon_holstein <-  read_tsv("exported/shannon_holstein_significance/metadata.tsv") %>% 
+  select(day, time, shannon) %>% 
+  rename(Day=day, Time=time) %>% 
+  slice(2:76) %>% 
+  mutate(Day=as.factor(Day)) %>% 
+  mutate(Time=as.factor(Time)) %>% 
+  mutate(shannon=as.numeric(shannon))
+
+#summary statistic  
+options(pillar.sigfig=5)
+shannon_holstein %>%
+  group_by(Time) %>% 
+  summarise(mean=mean(shannon),
+            stdev=sd(shannon),
+            maxvalue=max(shannon),
+            minvalue=min(shannon))
+
+shannon_holstein %>%
+  group_by(Day) %>% 
+  summarise(mean=mean(shannon),
+            stdev=sd(shannon),
+            maxvalue=max(shannon),
+            minvalue=min(shannon))
+
+#kruskal–wallis test
+kruskal.test(shannon ~ Time, data=shannon_holstein)
+#Post-hoc test
+pairwise.wilcox.test(shannon_holstein$shannon, shannon_holstein$Time, p.adjust.method="BH")
+
+#kruskal–wallis test
+kruskal.test(shannon ~ Day, data=shannon_holstein)
+#Post-hoc test
+pairwise.wilcox.test(shannon_holstein$shannon, shannon_holstein$Day, p.adjust.method="BH")
+
+#time boxplot
+boxplot_time_holstein_shannon <- ggplot(shannon_holstein, aes(x=Time, y=shannon, color=Time)) + annotate(geom="text", x="6", y=9, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.52") +  geom_boxplot(lwd=1) + labs(title="", x="Time", y="Shannon Index") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_x_discrete(limits=c("0","6","12","18","24")) + ylim(6.0,9.0)
+
+#day boxplot
+boxplot_day_holstein_shannon <- ggplot(shannon_holstein, aes(x=Day, y=shannon, color=Day)) + annotate(geom="text", x="14", y=9, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.13") + geom_boxplot(lwd=1) + labs(title="", x="Day", y="Shannon Index") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + ylim(6,9)
+
+#combine boxplots
+boxplots_holstein <- ggarrange(boxplot_time_holstein_otus,boxplot_day_holstein_otus,boxplot_time_holstein_shannon,boxplot_day_holstein_shannon,
+                               labels = c("A","B","C","D"),
+                               ncol = 2, nrow = 2)
+
+#generate figure
+ggexport(boxplots_holstein, filename="figures/FigureS6.pdf", height=8, width=12)
+```
+
+Alpha metrics for Jersey.
+
+```{r, engine='bash'}
+mkdir alpha_metrics_jersey
+
+#Compute alpha diversity metrics
+qiime diversity alpha \
+  --i-table asv_jersey.qza \
+  --p-metric observed_otus \
+  --o-alpha-diversity alpha_metrics_jersey/observed_otus_vector.qza
+  
+qiime diversity alpha \
+  --i-table asv_jersey.qza \
+  --p-metric shannon \
+  --o-alpha-diversity alpha_metrics_jersey/shannon_vector.qza
+
+#Compara alpha diversity metrics
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_jersey/observed_otus_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/observed_otus_jersey_significance.qzv
+#qiime tools view visualizations/observed_otus_jersey_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/observed_otus_jersey_significance.qzv \
+  --output-path exported/observed_otus_jersey_significance
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha_metrics_jersey/shannon_vector.qza \
+  --m-metadata-file metadata/rumen_metadata.txt \
+  --o-visualization visualizations/shannon_jersey_significance.qzv
+#qiime tools view visualizations/shannon_jersey_significance.qzv
+
+qiime tools export \
+  --input-path visualizations/shannon_jersey_significance.qzv \
+  --output-path exported/shannon_jersey_significance
+```
+
+Generate alpha boxplots for Jersey.
+
+```{r}
+#load libraries
+library(tidyverse)
+library("ggpubr")
+
+#create observed_otus dataset
+observed_otus_jersey <-  read_tsv("exported/observed_otus_jersey_significance/metadata.tsv") %>% 
+  select(day, time, observed_otus) %>% 
+  rename(Day=day, Time=time) %>% 
+  slice(2:76) %>% 
+  mutate(Day=as.factor(Day)) %>% 
+  mutate(Time=as.factor(Time)) %>% 
+  mutate(observed_otus=as.numeric(observed_otus))
+
+#summary statistic  
+options(pillar.sigfig=5)
+observed_otus_jersey %>%
+  group_by(Time) %>% 
+  summarise(mean=mean(observed_otus),
+            stdev=sd(observed_otus),
+            maxvalue=max(observed_otus),
+            minvalue=min(observed_otus))
+
+observed_otus_jersey %>%
+  group_by(Day) %>% 
+  summarise(mean=mean(observed_otus),
+            stdev=sd(observed_otus),
+            maxvalue=max(observed_otus),
+            minvalue=min(observed_otus))
+
+#kruskal–wallis test
+kruskal.test(observed_otus ~ Time, data=observed_otus_jersey)
+#Post-hoc test
+pairwise.wilcox.test(observed_otus_jersey$observed_otus, observed_otus_jersey$Time, p.adjust.method="BH")
+
+#kruskal–wallis test
+kruskal.test(observed_otus ~ Day, data=observed_otus_jersey)
+#Post-hoc test
+pairwise.wilcox.test(observed_otus_jersey$observed_otus, observed_otus_jersey$Day, p.adjust.method="BH")
+
+#time boxplot
+boxplot_time_jersey_otus <- ggplot(observed_otus_jersey, aes(x=Time, y=observed_otus, color=Time)) + annotate(geom="text", x="6", y=1100, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.06") + geom_boxplot(lwd=1) + labs(title="", x="Time", y="Amplicon Sequence Variants") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_x_discrete(limits=c("0","6","12","18","24")) + ylim(600,1100) 
+
+#day boxplot
+boxplot_day_jersey_otus <- ggplot(observed_otus_jersey, aes(x=Day, y=observed_otus, color=Day)) + annotate(geom="text", x="14", y=1100, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.13") + geom_boxplot(lwd=1) + labs(title="", x="Day", y="Amplicon Sequence Variants") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + ylim(600,1100)
+
+#create shannon index dataset
+shannon_jersey <-  read_tsv("exported/shannon_jersey_significance/metadata.tsv") %>% 
+  select(day, time, shannon) %>% 
+  rename(Day=day, Time=time) %>% 
+  slice(2:76) %>% 
+  mutate(Day=as.factor(Day)) %>% 
+  mutate(Time=as.factor(Time)) %>% 
+  mutate(shannon=as.numeric(shannon))
+
+#summary statistic  
+options(pillar.sigfig=5)
+shannon_jersey %>%
+  group_by(Time) %>% 
+  summarise(mean=mean(shannon),
+            stdev=sd(shannon),
+            maxvalue=max(shannon),
+            minvalue=min(shannon))
+
+shannon_jersey %>%
+  group_by(Day) %>% 
+  summarise(mean=mean(shannon),
+            stdev=sd(shannon),
+            maxvalue=max(shannon),
+            minvalue=min(shannon))
+
+#kruskal–wallis test
+kruskal.test(shannon ~ Time, data=shannon_jersey)
+#Post-hoc test
+pairwise.wilcox.test(shannon_jersey$shannon, shannon_jersey$Time, p.adjust.method="BH")
+
+#kruskal–wallis test
+kruskal.test(shannon ~ Day, data=shannon_jersey)
+#Post-hoc test
+pairwise.wilcox.test(shannon_jersey$shannon, shannon_jersey$Day, p.adjust.method="BH")
+
+#time boxplot
+boxplot_time_jersey_shannon <- ggplot(shannon_jersey, aes(x=Time, y=shannon, color=Time)) + annotate(geom="text", x="6", y=9, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.80") + geom_boxplot(lwd=1) + labs(title="", x="Time", y="Shannon Index") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Time (h)", values=c("Black","Red","Blue","Green","Purple"), limits=c("0","6","12","18","24")) + scale_x_discrete(limits=c("0","6","12","18","24")) + ylim(6.0,9.0)
+
+#day boxplot
+my_comparisons <- list( c("0", "14"), c("0", "28"))
+
+boxplot_day_jersey_shannon <- ggplot(shannon_jersey, aes(x=Day, y=shannon, color=Day)) + annotate(geom="text", x="14", y=9.5, size=4, fontface="bold", color="#800000", label="Kruskal-Wallis, P = 0.005") + geom_boxplot(lwd=1) + labs(title="", x="Collection", y="Shannon Index") + theme(plot.title=element_text(color="black", size=18, face="bold", hjust=0.5), axis.line=element_line(color="black", size=1), axis.ticks=element_line(color="black"), axis.text=element_text(color="black", size=14, face="bold"), axis.title=element_text(color="black", size=16, face="bold"), legend.title=element_text(size=14, face="bold"), legend.text=element_text(size=14, face="bold")) + scale_color_manual(name="Day", values=c("Black","Red","Blue")) + ylim(6.0,9.5) + stat_compare_means(comparisons = my_comparisons, label="p.signif", label.y = c(8.7, 9.0))
+
+#combine plots
+boxplots_jersey <- ggarrange(boxplot_time_jersey_otus,boxplot_day_jersey_otus,boxplot_time_jersey_shannon,boxplot_day_jersey_shannon,
+                             labels = c("A","B","C","D"),
+                             ncol = 2, nrow = 2)
+
+#generate figure
+ggexport(boxplots_jersey, filename="figures/FigureS7.pdf", height=8, width=12)
+```
