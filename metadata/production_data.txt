@@ -1,0 +1,281 @@
+Cow	Breed	Day	DMI	MY
+408	Holstein	1	27.2	29.2
+408	Holstein	2	26.5	28.3
+408	Holstein	3	30.1	32.8
+408	Holstein	4	28.1	
+408	Holstein	5	27.2	
+408	Holstein	6	30.7	30.6
+408	Holstein	7	25.4	26.5
+408	Holstein	8	30.3	29.6
+408	Holstein	9	27.4	27.2
+408	Holstein	10	28.3	31.1
+408	Holstein	11	28.1	29.7
+408	Holstein	12	28.1	27.6
+408	Holstein	13	26.3	28.1
+408	Holstein	14	8.5	28
+408	Holstein	15	23.4	20
+408	Holstein	16	33.2	23
+408	Holstein	17	24.5	30.4
+408	Holstein	18	29.4	26.8
+408	Holstein	19	6.2	25
+408	Holstein	20	33.2	24.7
+408	Holstein	21	21.8	28.9
+408	Holstein	22	29.2	30.8
+408	Holstein	23	22.3	25.3
+408	Holstein	24	15.8	29
+408	Holstein	25	20.7	28.4
+408	Holstein	26	16.9	26.2
+408	Holstein	27	14.9	28.7
+408	Holstein	28	23.8	26.6
+412	Holstein	1	25.6	
+412	Holstein	2	24.3	
+412	Holstein	3	24.9	38.8
+412	Holstein	4	26.3	
+412	Holstein	5	26.1	41.1
+412	Holstein	6	28.1	34.7
+412	Holstein	7	23.2	37.3
+412	Holstein	8	31.9	38.3
+412	Holstein	9	30.1	37.1
+412	Holstein	10	29.8	37.5
+412	Holstein	11	29	39.6
+412	Holstein	12	22.7	36.7
+412	Holstein	13	30.3	39
+412	Holstein	14	27.8	42.2
+412	Holstein	15	19.6	39
+412	Holstein	16	25.8	
+412	Holstein	17	28.7	37.6
+412	Holstein	18	28.5	32.4
+412	Holstein	19	26.1	32.1
+412	Holstein	20	29	35.2
+412	Holstein	21	25.4	37.3
+412	Holstein	22	26.5	40.1
+412	Holstein	23	19.8	38.6
+412	Holstein	24	22.5	40.9
+412	Holstein	25	28.5	37
+412	Holstein	26	27.2	39
+412	Holstein	27	24.7	32
+412	Holstein	28	24.5	36.4
+433	Holstein	1	25.8	
+433	Holstein	2	24.9	28.2
+433	Holstein	3	28.3	31.1
+433	Holstein	4	25.2	29.1
+433	Holstein	5	29	
+433	Holstein	6	24.3	30.4
+433	Holstein	7	18.3	28.6
+433	Holstein	8	23.8	29.1
+433	Holstein	9	19.4	
+433	Holstein	10	21.6	
+433	Holstein	11	25.8	31
+433	Holstein	12	22.5	
+433	Holstein	13	25.2	27.1
+433	Holstein	14	24.1	30
+433	Holstein	15	26.7	
+433	Holstein	16	20.5	27
+433	Holstein	17	25.8	
+433	Holstein	18	23.6	
+433	Holstein	19	29.2	25
+433	Holstein	20	21.6	29.6
+433	Holstein	21	15.4	26.5
+433	Holstein	22	10.7	24.2
+433	Holstein	23	14.5	
+433	Holstein	24	12.9	18
+433	Holstein	25	14.5	
+433	Holstein	26	18.9	17.6
+433	Holstein	27	19.2	19
+433	Holstein	28	17.6	
+435	Holstein	1	27	31.5
+435	Holstein	2	24.1	
+435	Holstein	3	24.5	34.3
+435	Holstein	4	29.6	
+435	Holstein	5	31	32.1
+435	Holstein	6	31	31.8
+435	Holstein	7	33.2	31.2
+435	Holstein	8	30.3	35.2
+435	Holstein	9	31	
+435	Holstein	10	33.6	36.2
+435	Holstein	11	25.4	32.3
+435	Holstein	12	33.6	34.9
+435	Holstein	13	34.3	31.2
+435	Holstein	14	22.5	35.7
+435	Holstein	15	28.1	34.5
+435	Holstein	16	28.5	35.7
+435	Holstein	17	21.2	33.5
+435	Holstein	18	30.1	35.4
+435	Holstein	19	31.2	
+435	Holstein	20	33.9	34.1
+435	Holstein	21	26.5	34.8
+435	Holstein	22	34.1	35.2
+435	Holstein	23	29	
+435	Holstein	24	35	37.4
+435	Holstein	25	25.6	36.5
+435	Holstein	26	31	26.7
+435	Holstein	27	33.4	33.2
+435	Holstein	28	29.4	37.6
+436	Holstein	1	26.1	37.4
+436	Holstein	2	27.2	34.6
+436	Holstein	3	27.8	39
+436	Holstein	4	30.3	38.2
+436	Holstein	5	31.4	40.3
+436	Holstein	6	30.7	36.8
+436	Holstein	7	25.2	38.9
+436	Holstein	8	31.4	43.3
+436	Holstein	9	18.3	39.1
+436	Holstein	10	24.1	45.8
+436	Holstein	11	28.1	41.7
+436	Holstein	12	28.5	37.5
+436	Holstein	13	28.7	39.6
+436	Holstein	14	29.2	
+436	Holstein	15	26.5	28.5
+436	Holstein	16	28.7	
+436	Holstein	17	30.1	39.4
+436	Holstein	18	27.8	41.9
+436	Holstein	19	29.8	35.5
+436	Holstein	20	30.1	38.8
+436	Holstein	21	24.9	41.4
+436	Holstein	22	27.6	43
+436	Holstein	23	27.8	43.6
+436	Holstein	24	26.1	40.6
+436	Holstein	25	23.8	39.3
+436	Holstein	26	27.8	38.5
+436	Holstein	27	26.7	38.4
+436	Holstein	28	25.4	40.1
+238	Jersey	1	21.8	
+238	Jersey	2	21.8	30.3
+238	Jersey	3	21.8	24.1
+238	Jersey	4	19.6	24.8
+238	Jersey	5	21.8	24.8
+238	Jersey	6	24.1	22.3
+238	Jersey	7	18.3	24.8
+238	Jersey	8	22.1	27.8
+238	Jersey	9	21.6	24.7
+238	Jersey	10	17.2	
+238	Jersey	11	22.9	24.6
+238	Jersey	12	20.3	25.3
+238	Jersey	13	21.4	24.8
+238	Jersey	14	18.9	
+238	Jersey	15	21.2	22.9
+238	Jersey	16	17.8	23
+238	Jersey	17	25.6	26.2
+238	Jersey	18	21.8	25.1
+238	Jersey	19	22.1	30.6
+238	Jersey	20	22.9	25.1
+238	Jersey	21	15.6	26.9
+238	Jersey	22	21.2	26.9
+238	Jersey	23	20	28.5
+238	Jersey	24	20.3	27.6
+238	Jersey	25	21.8	28.2
+238	Jersey	26	23.6	26.9
+238	Jersey	27	16.5	26.7
+238	Jersey	28	17.4	26.6
+244	Jersey	1	26.3	11.6
+244	Jersey	2	27	
+244	Jersey	3	26.3	
+244	Jersey	4	22.5	13.9
+244	Jersey	5	22.7	13.9
+244	Jersey	6	19.6	8.8
+244	Jersey	7	29.4	11.3
+244	Jersey	8	27.4	14.7
+244	Jersey	9	25.8	14
+244	Jersey	10	29.2	14.9
+244	Jersey	11	29	13.5
+244	Jersey	12	30.7	16.7
+244	Jersey	13	31.2	13.7
+244	Jersey	14	31.2	12.6
+244	Jersey	15	27.6	20.8
+244	Jersey	16	26.3	13
+244	Jersey	17	31.2	10.6
+244	Jersey	18	18	14.7
+244	Jersey	19	23.6	15.6
+244	Jersey	20	20	11.6
+244	Jersey	21	10.9	12.8
+244	Jersey	22	14.3	14
+244	Jersey	23	20.3	14.5
+244	Jersey	24	27.2	13.2
+244	Jersey	25	33.4	12.9
+244	Jersey	26	35.6	14.6
+244	Jersey	27	29.2	12.5
+244	Jersey	28	13.8	13.4
+253	Jersey	1	18.9	25.3
+253	Jersey	2	16.5	23.7
+253	Jersey	3	26.3	
+253	Jersey	4	22.5	31.6
+253	Jersey	5	24.3	24.3
+253	Jersey	6	24.7	21.8
+253	Jersey	7	21.6	24
+253	Jersey	8	25.6	27.6
+253	Jersey	9	27	
+253	Jersey	10	24.1	27.3
+253	Jersey	11	26.3	26.7
+253	Jersey	12	25.2	
+253	Jersey	13	27.6	24.8
+253	Jersey	14	19.8	24.1
+253	Jersey	15	23.6	26.9
+253	Jersey	16	24.7	
+253	Jersey	17	28.7	
+253	Jersey	18	22.3	
+253	Jersey	19	24.3	23.5
+253	Jersey	20	25.4	23.3
+253	Jersey	21	18.9	24.1
+253	Jersey	22	22.5	25
+253	Jersey	23	21.2	24.6
+253	Jersey	24	20.9	24.5
+253	Jersey	25	21.8	
+253	Jersey	26	27.2	24.8
+253	Jersey	27	18	23.1
+253	Jersey	28	18.5	23.8
+256	Jersey	1	15.8	14
+256	Jersey	2	15.1	
+256	Jersey	3	18.7	14.3
+256	Jersey	4	18.7	14.7
+256	Jersey	5	21.4	15.5
+256	Jersey	6	17.2	13
+256	Jersey	7	15.1	13.2
+256	Jersey	8	25.2	14
+256	Jersey	9	15.8	14.5
+256	Jersey	10	21.2	16.7
+256	Jersey	11	14.7	16.3
+256	Jersey	12	13.1	13.3
+256	Jersey	13	20.3	14.6
+256	Jersey	14	16	
+256	Jersey	15	18.5	
+256	Jersey	16	20.7	
+256	Jersey	17	19.4	
+256	Jersey	18	19.2	14.1
+256	Jersey	19	20.3	
+256	Jersey	20	20.9	14.2
+256	Jersey	21	13.4	14.5
+256	Jersey	22	16.5	14.6
+256	Jersey	23	17.6	
+256	Jersey	24	18.5	14.7
+256	Jersey	25	16.3	13.3
+256	Jersey	26	16.7	13.3
+256	Jersey	27	13.4	14.4
+256	Jersey	28	12	14.3
+259	Jersey	1	17.8	15.9
+259	Jersey	2	15.1	14.8
+259	Jersey	3	16.9	16.4
+259	Jersey	4	19.8	17.7
+259	Jersey	5	20.9	16.1
+259	Jersey	6	18.5	
+259	Jersey	7	18.7	15.5
+259	Jersey	8	19.4	19.1
+259	Jersey	9	19.8	17
+259	Jersey	10	19.6	17.8
+259	Jersey	11	18	16.4
+259	Jersey	12	19.2	16.2
+259	Jersey	13	19.2	17.2
+259	Jersey	14	20.7	15
+259	Jersey	15	13.8	15.9
+259	Jersey	16	14.3	
+259	Jersey	17	22.7	17.8
+259	Jersey	18	21.8	13.5
+259	Jersey	19	20.9	15.5
+259	Jersey	20	22.5	14.1
+259	Jersey	21	14.9	13.7
+259	Jersey	22	18.7	13.4
+259	Jersey	23	16.9	13.5
+259	Jersey	24	14.3	13.9
+259	Jersey	25	15.1	13.3
+259	Jersey	26	18.3	13
+259	Jersey	27	20	13.5
+259	Jersey	28	16.7	14.5
