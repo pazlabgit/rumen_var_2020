@@ -1,12 +1,12 @@
-##Introduction
+## Introduction
 
 :computer: :bar_chart:
-Analysis to recreate the results in the manuscript **""** by Paz et al. 2020. Analysis is presented as several R Markdown files.
+Analysis to recreate the results in the manuscript **""** by Paz et al. 2020. 
 
-##Running details
-R Markdown files were ran on a Macintosh using the macOS High Sierra v10.13.6 operating system with 8 GB RAM. Other operating systems should work with successful cloning of the environment (see **Create environment**)
+## Running details
+Analysis is presented as several R Markdown files that were ran on a Macintosh using the macOS High Sierra v10.13.6 operating system with 8 GB RAM. Other operating systems should work with successful cloning of the environment (see **Create environment**)
 
-##Steps
+## Steps
 
 Follow the instructions below to setup the same environment used to analyze the data and render the R Markdown files. Adhere to the delineated order as succeeding R Markdown files depend on previous results.
 
